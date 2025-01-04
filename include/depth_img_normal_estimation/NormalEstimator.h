@@ -2,6 +2,9 @@
 
 #include <ros/ros.h>
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include <sensor_msgs/Image.h>
 
 // Include opencv2

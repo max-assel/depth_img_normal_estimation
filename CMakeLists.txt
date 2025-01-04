@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
           ${CATKIN_PACKAGE_DEPENDENCIES}
         )
 
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -19,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
    INCLUDE_DIRS 
         include
+        ${EIGEN3_INCLUDE_DIRS}
    LIBRARIES
         ${PROJECT_NAME}
    CATKIN_DEPENDS
@@ -32,6 +35,7 @@ catkin_package(
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIRS}
 )
 
 # Main library

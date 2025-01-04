@@ -40,20 +40,20 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv::Mat& normals
         for (int c = 0; c < (cols - 1); c++)
         {
             // Do something
-            Z = depth_img.at<float>(r, c);
-            Z_r = depth_img.at<float>(r + 1, c);
-            Z_c = depth_img.at<float>(r, c + 1);
+            float Z = depth_img.at<float>(r, c);
+            float Z_r = depth_img.at<float>(r + 1, c);
+            float Z_c = depth_img.at<float>(r, c + 1);
 
             // Calculate depth gradient
-            dZ_dx = (Z_c - Z);
-            dZ_dy = (Z_r - Z);
+            float dZ_dx = (Z_c - Z);
+            float dZ_dy = (Z_r - Z);
 
             // Calculate X/Y gradients
-            dX_dx = (Z / camera.fx) + dZ_dx * (c - camera.u_0) / camera.fx;
-            dY_dx = dZ_dx * (r - camera.v_0) / camera.fy;
+            float dX_dx = (Z / camera.fx) + dZ_dx * (c - camera.u_0) / camera.fx;
+            float dY_dx = dZ_dx * (r - camera.v_0) / camera.fy;
 
-            dX_dy = dZ_dy * (c - camera.u_0) / camera.fx;
-            dY_dy = (Z / camera.fy) + dZ_dy * (r - camera.v_0) / camera.fy;
+            float dX_dy = dZ_dy * (c - camera.u_0) / camera.fx;
+            float dY_dy = (Z / camera.fy) + dZ_dy * (r - camera.v_0) / camera.fy;
 
             // Calculate direcitonal derivatives
             Eigen::Vector3f v_x(dX_dx, dY_dx, dZ_dx);
