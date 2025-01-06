@@ -5,31 +5,73 @@ NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle)
     image_transport::ImageTransport it(nodeHandle);
 
     // Initialize subscriber
-    depth_img_sub = it.subscribe("/camera/depth/image", 1, &NormalEstimator::depthImgCallback, this);
+    depth_img_sub = it.subscribe("/camera/depth/image_raw", 1, &NormalEstimator::depthImgCallback, this);
+
+    // Initialize publisher
+    normals_img_pub = it.advertise("/camera/normals/image_raw", 1);
 }
 
-void NormalEstimator::depthImgCallback(const sensor_msgs::ImageConstPtr& msg)
+void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
 {
     std::lock_guard<std::mutex> lock(depth_img_mutex);
-    depth_img_msg = msg;
+
+    ROS_INFO("[NormalEstimator::depthImgCallback]");
+
+    try
+    {
+        depth_img_ptr = cv_bridge::toCvCopy(msg, "16UC1");
+        ROS_INFO("      received new depth image");
+    } catch (std::exception& e)
+    {
+        ROS_ERROR("       depthImgCallback failed: %s", e.what());
+        return;
+    }       
+}
+
+bool NormalEstimator::readyToEstimateNormals()
+{
+    return depth_img_ptr != nullptr;
 }
 
 void NormalEstimator::runNormalEstimation()
 {
     std::lock_guard<std::mutex> lock(depth_img_mutex);
 
-    // Read depth image
-    cv::Mat depth_img = cv_bridge::toCvShare(depth_img_msg)->image; // , "32FC1"
+    if (!readyToEstimateNormals())
+    {
+        ROS_WARN("Not ready to estimate normals, no depth image received yet.");
+        return;
+    }
 
+    // Read depth image
+    cv::Mat depth_img = depth_img_ptr->image;
+    
     // Normals
-    cv::Mat normals;
-    estimateNormals(depth_img, normals);
+    // set size as h x w x 3
+    cv_bridge::CvImagePtr normals_ptr(new cv_bridge::CvImage);
+    normals_ptr->header = depth_img_ptr->header;                                // suspect of this
+    normals_ptr->encoding = "8UC3";                                            // suspect of this
+    normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_8UC3);     // suspect of this
+
+    estimateNormals(depth_img, normals_ptr);
+
+    // Display normals
+    publishNormals(normals_ptr);
 
     return;
 }
 
-void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv::Mat& normals)
+void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals)
 {
+    normals_img_pub.publish(normals->toImageMsg());
+}
+
+void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals)
+{
+    ROS_INFO("[NormalEstimator::estimateNormals]");
+
+    uint16_t scale = 1000;
+
     // Normal estimation code
 
     int rows = depth_img.rows;
@@ -39,14 +81,23 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv::Mat& normals
     {
         for (int c = 0; c < (cols - 1); c++)
         {
+            ROS_INFO("      pixel: (%d, %d)", r, c);
+
             // Do something
-            float Z = depth_img.at<float>(r, c);
-            float Z_r = depth_img.at<float>(r + 1, c);
-            float Z_c = depth_img.at<float>(r, c + 1);
+            float Z = float(depth_img.at<uint16_t>(r, c) / scale);
+            float Z_r = float(depth_img.at<uint16_t>(r + 1, c) / scale);
+            float Z_c = float(depth_img.at<uint16_t>(r, c + 1) / scale);
+
+            ROS_INFO("      Z: %f", Z);
+            ROS_INFO("      Z_r: %f", Z_r);
+            ROS_INFO("      Z_c: %f", Z_c);
 
             // Calculate depth gradient
             float dZ_dx = (Z_c - Z);
             float dZ_dy = (Z_r - Z);
+
+            ROS_INFO("      dZ_dx: %f", dZ_dx);
+            ROS_INFO("      dZ_dy: %f", dZ_dy);
 
             // Calculate X/Y gradients
             float dX_dx = (Z / camera.fx) + dZ_dx * (c - camera.u_0) / camera.fx;
@@ -55,15 +106,38 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv::Mat& normals
             float dX_dy = dZ_dy * (c - camera.u_0) / camera.fx;
             float dY_dy = (Z / camera.fy) + dZ_dy * (r - camera.v_0) / camera.fy;
 
+            ROS_INFO("      dX_dx: %f", dX_dx);
+            ROS_INFO("      dY_dx: %f", dY_dx);
+            ROS_INFO("      dX_dy: %f", dX_dy);
+            ROS_INFO("      dY_dy: %f", dY_dy);
+
             // Calculate direcitonal derivatives
             Eigen::Vector3f v_x(dX_dx, dY_dx, dZ_dx);
             Eigen::Vector3f v_y(dX_dy, dY_dy, dZ_dy);
 
-            // Calculate normal
-            Eigen::Vector3f n = v_y.cross(v_x); // I think?
+            ROS_INFO("      v_x: %f %f %f", v_x(0), v_x(1), v_x(2));
+            ROS_INFO("      v_y: %f %f %f", v_y(0), v_y(1), v_y(2));
 
+            // Calculate normal
+            Eigen::Vector3f n = v_y.cross(v_x); // I think it should be y cross x
+
+            ROS_INFO("      raw normal: %f %f %f", n(0), n(1), n(2));
+
+            // Normalize normal
+            n.normalize();
+
+            ROS_INFO("      normal: %f %f %f", n(0), n(1), n(2));
+
+            // Set normal
+            normals->image.at<cv::Vec3f>(r, c)[0] = n(0);
+            normals->image.at<cv::Vec3f>(r, c)[1] = n(1);
+            normals->image.at<cv::Vec3f>(r, c)[2] = n(2);
         }
     }
+
+    ROS_INFO("      middle normal: %f %f %f", normals->image.at<cv::Vec3f>(rows / 2, cols / 2)[0], 
+                                                normals->image.at<cv::Vec3f>(rows / 2, cols / 2)[1], 
+                                                normals->image.at<cv::Vec3f>(rows / 2, cols / 2)[2]);
 
     // take penultimate row/col and copy to last row/col
 

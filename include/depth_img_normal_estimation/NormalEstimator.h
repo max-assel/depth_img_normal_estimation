@@ -29,14 +29,22 @@ class NormalEstimator
 
     private:
 
-        void depthImgCallback(const sensor_msgs::ImageConstPtr& msg);
+        void depthImgCallback(const sensor_msgs::Image::ConstPtr& msg);
 
-        void estimateNormals(const cv::Mat& depth_img, cv::Mat& normals);
+        void estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals);
+
+        void publishNormals(const cv_bridge::CvImagePtr& normals);
+
+        bool readyToEstimateNormals();
 
         image_transport::Subscriber depth_img_sub;
+        image_transport::Publisher normals_img_pub; /**< estimated normals image publisher */
+
         std::mutex depth_img_mutex;
         ros::NodeHandle nodeHandle;
-        sensor_msgs::ImageConstPtr depth_img_msg;
+
+        cv_bridge::CvImagePtr depth_img_ptr;
+
 
         PinholeCamera camera;
 };
