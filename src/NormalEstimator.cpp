@@ -15,12 +15,12 @@ void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
 {
     std::lock_guard<std::mutex> lock(depth_img_mutex);
 
-    ROS_INFO("[NormalEstimator::depthImgCallback]");
+    // ROS_INFO("[NormalEstimator::depthImgCallback]");
 
     try
     {
         depth_img_ptr = cv_bridge::toCvCopy(msg, "32FC1");
-        ROS_INFO("      received new depth image");
+        // ROS_INFO("      received new depth image");
     } catch (std::exception& e)
     {
         ROS_ERROR("       depthImgCallback failed: %s", e.what());
@@ -46,20 +46,24 @@ void NormalEstimator::runNormalEstimation()
     // Read depth image
     cv::Mat depth_img = depth_img_ptr->image;
     
+    // Pre-process depth image
+    cv::Mat depth_img_preprocessed;
+    int kernel_size = 9;
+    double sigma_color = 75.0;
+    double sigma_space = 75.0;
+    cv::bilateralFilter(depth_img, depth_img_preprocessed, kernel_size, sigma_color, sigma_space);
+
     // Normals
     // set size as h x w x 3
     cv_bridge::CvImagePtr normals_ptr(new cv_bridge::CvImage);
-    normals_ptr->header = depth_img_ptr->header;                                // suspect of this
-    normals_ptr->encoding = "8UC3";                                            // suspect of this    
-    normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_8UC3, cv::Scalar(0, 0, 0));     // suspect of this
+    normals_ptr->header = depth_img_ptr->header;                                
+    normals_ptr->encoding = "8UC3";                                            
+    normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_8UC3, cv::Scalar(0, 0, 0));
 
-    estimateNormals(depth_img, normals_ptr);
+    estimateNormals(depth_img_preprocessed, normals_ptr);
 
     int rows = depth_img.rows;
     int cols = depth_img.cols;
-    // ROS_INFO("      middle normal: %d %d %d", normals_ptr->image.at<cv::Vec3b>(rows / 2, cols / 2)[0], 
-    //                                           normals_ptr->image.at<cv::Vec3b>(rows / 2, cols / 2)[1], 
-    //                                           normals_ptr->image.at<cv::Vec3b>(rows / 2, cols / 2)[2]);
 
     // Display normals
     publishNormals(normals_ptr);
@@ -77,6 +81,8 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     // ROS_INFO("[NormalEstimator::estimateNormals]");
 
     float scale = 1000;
+
+    float depth_thresh = 0.05;
 
     // Normal estimation code
 
@@ -101,6 +107,9 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // Calculate depth gradient
             float dZ_dx = (Z_c - Z);
             float dZ_dy = (Z_r - Z);
+
+            if (std::abs(dZ_dx) > depth_thresh || std::abs(dZ_dy) > depth_thresh)
+                continue;
 
             // ROS_INFO("      dZ_dx: %f", dZ_dx);
             // ROS_INFO("      dZ_dy: %f", dZ_dy);
