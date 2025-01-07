@@ -1,0 +1,7 @@
+bilateral_filter:
+  kernel_size: 9
+  sigma_color: 75.0
+  sigma_space: 75.0
+  
+normal_estimation:
+  depth_threshold: 0.05

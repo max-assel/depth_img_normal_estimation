@@ -1,15 +1,29 @@
 #include <depth_img_normal_estimation/NormalEstimator.h>
 
-NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle)
+NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle, 
+                                    const std::string & camera_depth_topic, 
+                                    const std::string & config_path)
 {
     image_transport::ImageTransport it(nodeHandle);
 
     // Initialize subscriber
-    depth_img_sub = it.subscribe("/camera/depth/image_raw", 1, &NormalEstimator::depthImgCallback, this);
+    depth_img_sub = it.subscribe(camera_depth_topic, 1, &NormalEstimator::depthImgCallback, this);
 
     // Initialize publishers
     normals_pub = it.advertise("/camera/normals", 1);
     normals_bgr_img_pub = it.advertise("/camera/color_normals", 1);
+
+    // Load configs
+    YAML::Node configYamlNode = YAML::LoadFile(config_path);
+
+    params.depth_thresh = configYamlNode["normal_estimation"]["depth_threshold"].as<float>();
+    params.bilat_filter_kernel_size = configYamlNode["bilateral_filter"]["kernel_size"].as<int>();
+    params.bilat_filter_sigma_color = configYamlNode["bilateral_filter"]["sigma_color"].as<float>();
+    params.bilat_filter_sigma_space = configYamlNode["bilateral_filter"]["sigma_space"].as<float>();
+
+    ROS_INFO("Depth threshold: %f", params.depth_thresh);
+
+
 }
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
@@ -51,10 +65,11 @@ void NormalEstimator::runNormalEstimation()
 
     // Pre-process depth image
     cv::Mat depth_img_preprocessed;
-    int kernel_size = 9;
-    double sigma_color = 75.0;
-    double sigma_space = 75.0;
-    cv::bilateralFilter(depth_img, depth_img_preprocessed, kernel_size, sigma_color, sigma_space);
+    cv::bilateralFilter(depth_img, 
+                        depth_img_preprocessed, 
+                        params.bilat_filter_kernel_size, 
+                        params.bilat_filter_sigma_color, 
+                        params.bilat_filter_sigma_space);
 
     // Normals
     // set size as h x w x 3
@@ -66,8 +81,8 @@ void NormalEstimator::runNormalEstimation()
     estimateNormals(depth_img_preprocessed, normals_ptr);
 
     // Query middle normal
-    int r = rows / 2;
-    int c = cols / 2;
+    // int r = rows / 2;
+    // int c = cols / 2;
     // ROS_INFO("      middle normal: %f %f %f", normals_ptr->image.at<cv::Vec3f>(r, c)[0], 
     //                                             normals_ptr->image.at<cv::Vec3f>(r, c)[1], 
     //                                             normals_ptr->image.at<cv::Vec3f>(r, c)[2]);
@@ -106,8 +121,6 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
     float scale = 1000;
 
-    float depth_thresh = 0.05;
-
     // Normal estimation code
 
     int rows = depth_img.rows;
@@ -132,7 +145,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             float dZ_dx = (Z_c - Z);
             float dZ_dy = (Z_r - Z);
 
-            if (std::abs(dZ_dx) > depth_thresh || std::abs(dZ_dy) > depth_thresh)
+            if (std::abs(dZ_dx) > params.depth_thresh || std::abs(dZ_dy) > params.depth_thresh)
                 continue;
 
             // ROS_INFO("      dZ_dx: %f", dZ_dx);

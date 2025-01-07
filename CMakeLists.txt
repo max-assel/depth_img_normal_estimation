@@ -24,6 +24,7 @@ catkin_package(
         ${EIGEN3_INCLUDE_DIRS}
    LIBRARIES
         ${PROJECT_NAME}
+        yaml-cpp
    CATKIN_DEPENDS
         ${CATKIN_PACKAGE_DEPENDENCIES}
 )
@@ -49,6 +50,7 @@ add_dependencies(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
+        yaml-cpp
         )
 
 target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})

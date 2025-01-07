@@ -15,6 +15,8 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 
+#include <yaml-cpp/yaml.h>
+
 #include <mutex>
 
 #include <depth_img_normal_estimation/PinholeCamera.h>
@@ -23,7 +25,9 @@ class NormalEstimator
 {
     public:
 
-        NormalEstimator(ros::NodeHandle & nodeHandle);
+        NormalEstimator(ros::NodeHandle & nodeHandle,
+                        const std::string & camera_depth_topic, 
+                        const std::string & config_path);
 
         void runNormalEstimation();
 
@@ -46,6 +50,15 @@ class NormalEstimator
 
         cv_bridge::CvImagePtr depth_img_ptr;
 
-
         PinholeCamera camera;
+
+        struct NormalEstimationParams
+        {
+            float depth_thresh;
+            int bilat_filter_kernel_size;
+            float bilat_filter_sigma_color;
+            float bilat_filter_sigma_space;
+        };
+
+        NormalEstimationParams params;
 };
