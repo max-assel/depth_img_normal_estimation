@@ -7,8 +7,9 @@ NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle)
     // Initialize subscriber
     depth_img_sub = it.subscribe("/camera/depth/image_raw", 1, &NormalEstimator::depthImgCallback, this);
 
-    // Initialize publisher
-    normals_img_pub = it.advertise("/camera/normals/image_raw", 1);
+    // Initialize publishers
+    normals_pub = it.advertise("/camera/normals", 1);
+    normals_bgr_img_pub = it.advertise("/camera/color_normals", 1);
 }
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
@@ -45,7 +46,9 @@ void NormalEstimator::runNormalEstimation()
 
     // Read depth image
     cv::Mat depth_img = depth_img_ptr->image;
-    
+    int rows = depth_img.rows;
+    int cols = depth_img.cols;
+
     // Pre-process depth image
     cv::Mat depth_img_preprocessed;
     int kernel_size = 9;
@@ -57,23 +60,44 @@ void NormalEstimator::runNormalEstimation()
     // set size as h x w x 3
     cv_bridge::CvImagePtr normals_ptr(new cv_bridge::CvImage);
     normals_ptr->header = depth_img_ptr->header;                                
-    normals_ptr->encoding = "8UC3";                                            
-    normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_8UC3, cv::Scalar(0, 0, 0));
+    normals_ptr->encoding = "32FC3";                                            
+    normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_32FC3, cv::Scalar(0.0, 0.0, 0.0));
 
     estimateNormals(depth_img_preprocessed, normals_ptr);
 
-    int rows = depth_img.rows;
-    int cols = depth_img.cols;
+    // Query middle normal
+    int r = rows / 2;
+    int c = cols / 2;
+    // ROS_INFO("      middle normal: %f %f %f", normals_ptr->image.at<cv::Vec3f>(r, c)[0], 
+    //                                             normals_ptr->image.at<cv::Vec3f>(r, c)[1], 
+    //                                             normals_ptr->image.at<cv::Vec3f>(r, c)[2]);
+
+    cv_bridge::CvImagePtr normals_bgr_ptr(new cv_bridge::CvImage);
+    normals_bgr_ptr->header = depth_img_ptr->header;                                
+    normals_bgr_ptr->encoding = "rgb8";                                            
+    normals_bgr_ptr->image = normals_ptr->image;
+
+    // Convert from float to 8UC3
+    // First, take abs value of normals
+    normals_bgr_ptr->image = cv::abs(normals_bgr_ptr->image);
+
+    // Then, convert to 8UC3
+    normals_bgr_ptr->image.convertTo(normals_bgr_ptr->image, CV_8UC3, 255.0);
+
+    // ROS_INFO("      middle colored normal: %d %d %d", normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[0], 
+    //                                                     normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[1], 
+    //                                                     normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[2]);
 
     // Display normals
-    publishNormals(normals_ptr);
+    publishNormals(normals_ptr, normals_bgr_ptr);
 
     return;
 }
 
-void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals)
+void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals, const cv_bridge::CvImagePtr& normals_bgr)
 {
-    normals_img_pub.publish(normals->toImageMsg());
+    normals_pub.publish(normals->toImageMsg());
+    normals_bgr_img_pub.publish(normals_bgr->toImageMsg());
 }
 
 void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals)
@@ -144,10 +168,12 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // ROS_INFO("      normal: %f %f %f", n(0), n(1), n(2));
 
             // Set normal
-            // Flipping order to keep XYZ with RGB
-            normals->image.at<cv::Vec3b>(r, c)[2] = int(255 * std::abs(n(0))); // taking abs just to ensure RGB values are positive
-            normals->image.at<cv::Vec3b>(r, c)[1] = int(255 * std::abs(n(1))); // taking abs just to ensure RGB values are positive
-            normals->image.at<cv::Vec3b>(r, c)[0] = int(255 * std::abs(n(2))); // taking abs just to ensure RGB values are positive
+            // normals->image.at<cv::Vec3b>(r, c)[2] = int(255 * std::abs(n(0))); // taking abs just to ensure RGB values are positive
+            // normals->image.at<cv::Vec3b>(r, c)[1] = int(255 * std::abs(n(1))); // taking abs just to ensure RGB values are positive
+            // normals->image.at<cv::Vec3b>(r, c)[0] = int(255 * std::abs(n(2))); // taking abs just to ensure RGB values are positive
+            normals->image.at<cv::Vec3f>(r, c)[0] = n(0);
+            normals->image.at<cv::Vec3f>(r, c)[1] = n(1);
+            normals->image.at<cv::Vec3f>(r, c)[2] = n(2);
         }
     }
 
