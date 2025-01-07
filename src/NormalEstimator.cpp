@@ -50,10 +50,16 @@ void NormalEstimator::runNormalEstimation()
     // set size as h x w x 3
     cv_bridge::CvImagePtr normals_ptr(new cv_bridge::CvImage);
     normals_ptr->header = depth_img_ptr->header;                                // suspect of this
-    normals_ptr->encoding = "8UC3";                                            // suspect of this
-    normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_8UC3);     // suspect of this
+    normals_ptr->encoding = "8UC3";                                            // suspect of this    
+    normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_8UC3, cv::Scalar(0, 0, 0));     // suspect of this
 
     estimateNormals(depth_img, normals_ptr);
+
+    int rows = depth_img.rows;
+    int cols = depth_img.cols;
+    // ROS_INFO("      middle normal: %d %d %d", normals_ptr->image.at<cv::Vec3b>(rows / 2, cols / 2)[0], 
+    //                                           normals_ptr->image.at<cv::Vec3b>(rows / 2, cols / 2)[1], 
+    //                                           normals_ptr->image.at<cv::Vec3b>(rows / 2, cols / 2)[2]);
 
     // Display normals
     publishNormals(normals_ptr);
@@ -68,7 +74,7 @@ void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals)
 
 void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals)
 {
-    ROS_INFO("[NormalEstimator::estimateNormals]");
+    // ROS_INFO("[NormalEstimator::estimateNormals]");
 
     float scale = 1000;
 
@@ -81,66 +87,75 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     {
         for (int c = 0; c < (cols - 1); c++)
         {
-            ROS_INFO("      pixel: (%d, %d)", r, c);
+            // ROS_INFO("      pixel: (%d, %d)", r, c);
 
             // Do something
             float Z = depth_img.at<float>(r, c) / scale;
-            // float Z_r = depth_img.at<float>(r + 1, c);
-            // float Z_c = depth_img.at<float>(r, c + 1);
+            float Z_r = depth_img.at<float>(r + 1, c) / scale;
+            float Z_c = depth_img.at<float>(r, c + 1) / scale;
 
-            ROS_INFO("      Z: %f", Z);
+            // ROS_INFO("      Z: %f", Z);
             // ROS_INFO("      Z_r: %f", Z_r);
             // ROS_INFO("      Z_c: %f", Z_c);
 
-            // // Calculate depth gradient
-            // float dZ_dx = (Z_c - Z);
-            // float dZ_dy = (Z_r - Z);
+            // Calculate depth gradient
+            float dZ_dx = (Z_c - Z);
+            float dZ_dy = (Z_r - Z);
 
             // ROS_INFO("      dZ_dx: %f", dZ_dx);
             // ROS_INFO("      dZ_dy: %f", dZ_dy);
 
-            // // Calculate X/Y gradients
-            // float dX_dx = (Z / camera.fx) + dZ_dx * (c - camera.u_0) / camera.fx;
-            // float dY_dx = dZ_dx * (r - camera.v_0) / camera.fy;
+            // Calculate X/Y gradients
+            float dX_dx = (Z / camera.fx) + dZ_dx * (c - camera.u_0) / camera.fx;
+            float dY_dx = dZ_dx * (r - camera.v_0) / camera.fy;
 
-            // float dX_dy = dZ_dy * (c - camera.u_0) / camera.fx;
-            // float dY_dy = (Z / camera.fy) + dZ_dy * (r - camera.v_0) / camera.fy;
+            float dX_dy = dZ_dy * (c - camera.u_0) / camera.fx;
+            float dY_dy = (Z / camera.fy) + dZ_dy * (r - camera.v_0) / camera.fy;
 
             // ROS_INFO("      dX_dx: %f", dX_dx);
             // ROS_INFO("      dY_dx: %f", dY_dx);
             // ROS_INFO("      dX_dy: %f", dX_dy);
             // ROS_INFO("      dY_dy: %f", dY_dy);
 
-            // // Calculate direcitonal derivatives
-            // Eigen::Vector3f v_x(dX_dx, dY_dx, dZ_dx);
-            // Eigen::Vector3f v_y(dX_dy, dY_dy, dZ_dy);
+            // Calculate direcitonal derivatives
+            Eigen::Vector3f v_x(dX_dx, dY_dx, dZ_dx);
+            Eigen::Vector3f v_y(dX_dy, dY_dy, dZ_dy);
 
             // ROS_INFO("      v_x: %f %f %f", v_x(0), v_x(1), v_x(2));
             // ROS_INFO("      v_y: %f %f %f", v_y(0), v_y(1), v_y(2));
 
-            // // Calculate normal
-            // Eigen::Vector3f n = v_y.cross(v_x); // I think it should be y cross x
+            // Calculate normal
+            Eigen::Vector3f n = v_y.cross(v_x); // I think it should be y cross x
 
             // ROS_INFO("      raw normal: %f %f %f", n(0), n(1), n(2));
 
-            // // Normalize normal
-            // n.normalize();
+            // Normalize normal
+            n.normalize();
 
             // ROS_INFO("      normal: %f %f %f", n(0), n(1), n(2));
 
-            // // Set normal
-            // normals->image.at<cv::Vec3f>(r, c)[0] = n(0);
-            // normals->image.at<cv::Vec3f>(r, c)[1] = n(1);
-            // normals->image.at<cv::Vec3f>(r, c)[2] = n(2);
+            // Set normal
+            // Flipping order to keep XYZ with RGB
+            normals->image.at<cv::Vec3b>(r, c)[2] = int(255 * std::abs(n(0))); // taking abs just to ensure RGB values are positive
+            normals->image.at<cv::Vec3b>(r, c)[1] = int(255 * std::abs(n(1))); // taking abs just to ensure RGB values are positive
+            normals->image.at<cv::Vec3b>(r, c)[0] = int(255 * std::abs(n(2))); // taking abs just to ensure RGB values are positive
         }
     }
 
-    // ROS_INFO("      middle normal: %f %f %f", normals->image.at<cv::Vec3f>(rows / 2, cols / 2)[0], 
-    //                                             normals->image.at<cv::Vec3f>(rows / 2, cols / 2)[1], 
-    //                                             normals->image.at<cv::Vec3f>(rows / 2, cols / 2)[2]);
-
     // take penultimate row/col and copy to last row/col
+    for (int c = 0; c < cols; c++)
+    {
+        normals->image.at<cv::Vec3b>(rows - 1, c)[0] = normals->image.at<cv::Vec3b>(rows - 2, c)[0];
+        normals->image.at<cv::Vec3b>(rows - 1, c)[1] = normals->image.at<cv::Vec3b>(rows - 2, c)[1];
+        normals->image.at<cv::Vec3b>(rows - 1, c)[2] = normals->image.at<cv::Vec3b>(rows - 2, c)[2];
+    }
 
+    for (int r = 0; r < rows; r++)
+    {
+        normals->image.at<cv::Vec3b>(r, cols - 1)[0] = normals->image.at<cv::Vec3b>(r, cols - 2)[0];
+        normals->image.at<cv::Vec3b>(r, cols - 1)[1] = normals->image.at<cv::Vec3b>(r, cols - 2)[1];
+        normals->image.at<cv::Vec3b>(r, cols - 1)[2] = normals->image.at<cv::Vec3b>(r, cols - 2)[2];
+    }
 
     return;
 }
