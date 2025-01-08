@@ -17,6 +17,11 @@ void ros_throw_param_load(const ros::NodeHandle & nh, const std::string & param_
     return ros_throw_if( !nh.getParam(param_name, param), "Couldn't find parameter: " + param_name);
 }
 
+void ros_throw_param_load(const ros::NodeHandle & nh, const std::string & param_name, bool & param)
+{
+    return ros_throw_if( !nh.getParam(param_name, param), "Couldn't find parameter: " + param_name);
+}
+
 int main(int argc, char** argv) 
 {
     // Initialize ros node
@@ -31,8 +36,11 @@ int main(int argc, char** argv)
     std::string config_path;
     ros_throw_param_load(nodeHandle, "/config_path", config_path);
 
+    bool hardware;
+    ros_throw_param_load(nodeHandle, "/hardware", hardware);
+
     // Create NormalEstimator object
-    NormalEstimator normalEstimator(nodeHandle, camera_depth_topic, config_path);
+    NormalEstimator normalEstimator(nodeHandle, camera_depth_topic, config_path, hardware);
 
     while (ros::ok())
     {

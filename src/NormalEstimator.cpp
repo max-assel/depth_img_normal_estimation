@@ -2,7 +2,8 @@
 
 NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle, 
                                     const std::string & camera_depth_topic, 
-                                    const std::string & config_path)
+                                    const std::string & config_path,
+                                    const bool & hardware)
 {
     image_transport::ImageTransport it(nodeHandle);
 
@@ -12,18 +13,19 @@ NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle,
     // Initialize publishers
     normals_pub = it.advertise("/camera/normals", 1);
     normals_bgr_img_pub = it.advertise("/camera/color_normals", 1);
+    filtered_depth_pub = it.advertise("/camera/depth/filtered", 1);
 
     // Load configs
     YAML::Node configYamlNode = YAML::LoadFile(config_path);
 
     params.depth_thresh = configYamlNode["normal_estimation"]["depth_threshold"].as<float>();
+    params.bilat_filter_num_iters = configYamlNode["bilateral_filter"]["num_iters"].as<int>();
     params.bilat_filter_kernel_size = configYamlNode["bilateral_filter"]["kernel_size"].as<int>();
     params.bilat_filter_sigma_color = configYamlNode["bilateral_filter"]["sigma_color"].as<float>();
     params.bilat_filter_sigma_space = configYamlNode["bilateral_filter"]["sigma_space"].as<float>();
+    params.infill_filter_kernel_size = configYamlNode["infill_filter"]["kernel_size"].as<int>();
 
-    ROS_INFO("Depth threshold: %f", params.depth_thresh);
-
-
+    hardware_ = hardware;
 }
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
@@ -65,11 +67,44 @@ void NormalEstimator::runNormalEstimation()
 
     // Pre-process depth image
     cv::Mat depth_img_preprocessed;
-    cv::bilateralFilter(depth_img, 
-                        depth_img_preprocessed, 
-                        params.bilat_filter_kernel_size, 
-                        params.bilat_filter_sigma_color, 
-                        params.bilat_filter_sigma_space);
+        
+    if (hardware_)
+    {
+        // bilateral filter
+        for (int i = 0; i < params.bilat_filter_num_iters; i++)
+        {
+            cv::Mat temp_img; 
+            cv::bilateralFilter(depth_img, 
+                            temp_img, 
+                            params.bilat_filter_kernel_size, 
+                            params.bilat_filter_sigma_color, 
+                            params.bilat_filter_sigma_space);
+            depth_img = temp_img;
+        }
+
+
+        // shadow infill
+        cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
+
+        cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
+
+    } else
+    {
+        
+        cv::bilateralFilter(depth_img, 
+                            depth_img_preprocessed, 
+                            params.bilat_filter_kernel_size, 
+                            params.bilat_filter_sigma_color, 
+                            params.bilat_filter_sigma_space);
+    }
+
+    // Publish filtered depth image
+    cv_bridge::CvImagePtr filtered_depth_ptr(new cv_bridge::CvImage);
+    filtered_depth_ptr->header = depth_img_ptr->header;
+    filtered_depth_ptr->encoding = "32FC1";
+    filtered_depth_ptr->image = depth_img_preprocessed;
+
+    filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
 
     // Normals
     // set size as h x w x 3

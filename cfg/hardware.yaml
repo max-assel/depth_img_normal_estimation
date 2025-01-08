@@ -1,7 +1,11 @@
 bilateral_filter:
+  num_iters: 5
   kernel_size: 9
   sigma_color: 75.0
   sigma_space: 75.0
   
+infill_filter:
+  kernel_size: 7
+
 normal_estimation:
   depth_threshold: 0.05

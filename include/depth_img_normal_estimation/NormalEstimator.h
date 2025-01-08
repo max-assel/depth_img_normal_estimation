@@ -27,7 +27,8 @@ class NormalEstimator
 
         NormalEstimator(ros::NodeHandle & nodeHandle,
                         const std::string & camera_depth_topic, 
-                        const std::string & config_path);
+                        const std::string & config_path,
+                        const bool & hardware);
 
         void runNormalEstimation();
 
@@ -44,20 +45,27 @@ class NormalEstimator
         image_transport::Subscriber depth_img_sub;
         image_transport::Publisher normals_pub; /**< estimated normals image publisher */
         image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
+        image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
 
         std::mutex depth_img_mutex;
         ros::NodeHandle nodeHandle;
 
         cv_bridge::CvImagePtr depth_img_ptr;
 
+        bool hardware_;
+
         PinholeCamera camera;
 
         struct NormalEstimationParams
         {
             float depth_thresh;
+
+            int bilat_filter_num_iters;
             int bilat_filter_kernel_size;
             float bilat_filter_sigma_color;
             float bilat_filter_sigma_space;
+
+            int infill_filter_kernel_size;
         };
 
         NormalEstimationParams params;
