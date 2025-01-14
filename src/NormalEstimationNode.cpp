@@ -42,14 +42,15 @@ int main(int argc, char** argv)
     // Create NormalEstimator object
     NormalEstimator normalEstimator(nodeHandle, camera_depth_topic, config_path, hardware);
 
-    while (ros::ok())
-    {
-        // Do something
-        normalEstimator.runNormalEstimation();
-     
-        loop_rate.sleep();
-        ros::spinOnce();
-    }
+    ros::spin();
 
+    // while (ros::ok())
+    // {
+    //     // Do something
+    //     normalEstimator.runNormalEstimation();
+     
+    //     loop_rate.sleep();
+    //     ros::spinOnce();
+    // }
 
 }

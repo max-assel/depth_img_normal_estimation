@@ -30,7 +30,7 @@ NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle,
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
 {
-    std::lock_guard<std::mutex> lock(depth_img_mutex);
+    // std::lock_guard<std::mutex> lock(depth_img_mutex);
 
     // ROS_INFO("[NormalEstimator::depthImgCallback]");
 
@@ -43,6 +43,9 @@ void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
         ROS_ERROR("       depthImgCallback failed: %s", e.what());
         return;
     }       
+
+    runNormalEstimation();
+
 }
 
 bool NormalEstimator::readyToEstimateNormals()
@@ -52,7 +55,7 @@ bool NormalEstimator::readyToEstimateNormals()
 
 void NormalEstimator::runNormalEstimation()
 {
-    std::lock_guard<std::mutex> lock(depth_img_mutex);
+    // std::lock_guard<std::mutex> lock(depth_img_mutex);
 
     if (!readyToEstimateNormals())
     {
