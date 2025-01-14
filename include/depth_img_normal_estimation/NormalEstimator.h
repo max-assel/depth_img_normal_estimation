@@ -40,7 +40,7 @@ class NormalEstimator
 
         void publishNormals(const cv_bridge::CvImagePtr& normals, const cv_bridge::CvImagePtr& normals_bgr);
 
-        bool readyToEstimateNormals();
+        bool notReceivedDepthImage();
 
         image_transport::Subscriber depth_img_sub;
         image_transport::Publisher normals_pub; /**< estimated normals image publisher */
