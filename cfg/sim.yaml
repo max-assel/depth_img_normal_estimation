@@ -8,4 +8,4 @@ infill_filter:
   kernel_size: 1
 
 normal_estimation:
-  depth_threshold: 0.05
+  depth_threshold: 0.1
