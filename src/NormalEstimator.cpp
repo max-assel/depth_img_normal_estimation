@@ -26,6 +26,10 @@ NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle,
     params.infill_filter_kernel_size = configYamlNode["infill_filter"]["kernel_size"].as<int>();
 
     hardware_ = hardware;
+
+    filtered_depth_ptr.reset(new cv_bridge::CvImage);
+    normals_ptr.reset(new cv_bridge::CvImage);
+    normals_bgr_ptr.reset(new cv_bridge::CvImage);
 }
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
@@ -78,10 +82,10 @@ void NormalEstimator::runNormalEstimation()
         {
             cv::Mat temp_img; 
             cv::bilateralFilter(depth_img, 
-                            temp_img, 
-                            params.bilat_filter_kernel_size, 
-                            params.bilat_filter_sigma_color, 
-                            params.bilat_filter_sigma_space);
+                                temp_img, 
+                                params.bilat_filter_kernel_size, 
+                                params.bilat_filter_sigma_color, 
+                                params.bilat_filter_sigma_space);
             depth_img = temp_img;
         }
 
@@ -93,7 +97,6 @@ void NormalEstimator::runNormalEstimation()
 
     } else
     {
-        
         cv::bilateralFilter(depth_img, 
                             depth_img_preprocessed, 
                             params.bilat_filter_kernel_size, 
@@ -102,7 +105,7 @@ void NormalEstimator::runNormalEstimation()
     }
 
     // Publish filtered depth image
-    cv_bridge::CvImagePtr filtered_depth_ptr(new cv_bridge::CvImage);
+    // cv_bridge::CvImagePtr filtered_depth_ptr(new cv_bridge::CvImage);
     filtered_depth_ptr->header = depth_img_ptr->header;
     filtered_depth_ptr->encoding = "32FC1";
     filtered_depth_ptr->image = depth_img_preprocessed;
@@ -111,7 +114,7 @@ void NormalEstimator::runNormalEstimation()
 
     // Normals
     // set size as h x w x 3
-    cv_bridge::CvImagePtr normals_ptr(new cv_bridge::CvImage);
+    // cv_bridge::CvImagePtr normals_ptr(new cv_bridge::CvImage);
     normals_ptr->header = depth_img_ptr->header;                                
     normals_ptr->encoding = "32FC3";                                            
     normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_32FC3, cv::Scalar(0.0, 0.0, 0.0));
@@ -119,16 +122,16 @@ void NormalEstimator::runNormalEstimation()
     estimateNormals(depth_img_preprocessed, normals_ptr);
 
     // Query middle normal
-    // int r = rows / 2;
-    // int c = cols / 2;
-    // ROS_INFO("      middle normal: %f %f %f", normals_ptr->image.at<cv::Vec3f>(r, c)[0], 
-    //                                             normals_ptr->image.at<cv::Vec3f>(r, c)[1], 
-    //                                             normals_ptr->image.at<cv::Vec3f>(r, c)[2]);
+    int r = rows / 2;
+    int c = cols / 2;
+    ROS_INFO("      middle normal (%i, %c): %f %f %f", r, c, normals_ptr->image.at<cv::Vec3f>(r, c)[0], 
+                                                                normals_ptr->image.at<cv::Vec3f>(r, c)[1], 
+                                                                normals_ptr->image.at<cv::Vec3f>(r, c)[2]);
 
-    cv_bridge::CvImagePtr normals_bgr_ptr(new cv_bridge::CvImage);
+    // cv_bridge::CvImagePtr normals_bgr_ptr(new cv_bridge::CvImage);
     normals_bgr_ptr->header = depth_img_ptr->header;                                
     normals_bgr_ptr->encoding = "rgb8";                                            
-    normals_bgr_ptr->image = normals_ptr->image;
+    normals_bgr_ptr->image = normals_ptr->image.clone();
 
     // Convert from float to 8UC3
     // First, take abs value of normals

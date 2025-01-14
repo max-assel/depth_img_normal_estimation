@@ -51,6 +51,9 @@ class NormalEstimator
         ros::NodeHandle nodeHandle;
 
         cv_bridge::CvImagePtr depth_img_ptr;
+        cv_bridge::CvImagePtr filtered_depth_ptr;
+        cv_bridge::CvImagePtr normals_ptr;
+        cv_bridge::CvImagePtr normals_bgr_ptr;
 
         bool hardware_;
 
