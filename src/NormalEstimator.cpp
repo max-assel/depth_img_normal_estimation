@@ -97,11 +97,12 @@ void NormalEstimator::runNormalEstimation()
 
     } else
     {
-        cv::bilateralFilter(depth_img, 
-                            depth_img_preprocessed, 
-                            params.bilat_filter_kernel_size, 
-                            params.bilat_filter_sigma_color, 
-                            params.bilat_filter_sigma_space);
+        depth_img_preprocessed = depth_img.clone();
+        // cv::bilateralFilter(depth_img, 
+        //                     depth_img_preprocessed, 
+        //                     params.bilat_filter_kernel_size, 
+        //                     params.bilat_filter_sigma_color, 
+        //                     params.bilat_filter_sigma_space);
     }
 
     // Publish filtered depth image
@@ -173,6 +174,9 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     float dX_dy = 0.0, dY_dy = 0.0;
     Eigen::Vector3f v_x, v_y, n;
 
+    int row_print = rows - 2;
+    int col_print = cols / 2;
+
     for (int r = 0; r < (rows - 1); r++)
     {
         for (int c = 0; c < (cols - 1); c++)
@@ -184,19 +188,12 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             Z_r = depth_img.at<float>(r + 1, c) * scale;
             Z_c = depth_img.at<float>(r, c + 1) * scale;
 
-            // ROS_INFO("      Z: %f", Z);
-            // ROS_INFO("      Z_r: %f", Z_r);
-            // ROS_INFO("      Z_c: %f", Z_c);
-
             // Calculate depth gradient
             dZ_dx = (Z_c - Z);
             dZ_dy = (Z_r - Z);
 
             if (std::abs(dZ_dx) > params.depth_thresh || std::abs(dZ_dy) > params.depth_thresh)
                 continue;
-
-            // ROS_INFO("      dZ_dx: %f", dZ_dx);
-            // ROS_INFO("      dZ_dy: %f", dZ_dy);
 
             // Calculate X/Y gradients
             dX_dx = (Z / camera.fx) + dZ_dx * (c - camera.u_0) / camera.fx;
@@ -205,17 +202,9 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             dX_dy = dZ_dy * (c - camera.u_0) / camera.fx;
             dY_dy = (Z / camera.fy) + dZ_dy * (r - camera.v_0) / camera.fy;
 
-            // ROS_INFO("      dX_dx: %f", dX_dx);
-            // ROS_INFO("      dY_dx: %f", dY_dx);
-            // ROS_INFO("      dX_dy: %f", dX_dy);
-            // ROS_INFO("      dY_dy: %f", dY_dy);
-
             // Calculate direcitonal derivatives
             v_x << dX_dx, dY_dx, dZ_dx;
             v_y << dX_dy, dY_dy, dZ_dy;
-
-            // ROS_INFO("      v_x: %f %f %f", v_x(0), v_x(1), v_x(2));
-            // ROS_INFO("      v_y: %f %f %f", v_y(0), v_y(1), v_y(2));
 
             // Calculate normal
             n = v_y.cross(v_x); // I think it should be y cross x
@@ -225,7 +214,27 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // Normalize normal
             n.normalize();
 
-            // ROS_INFO("      normal: %f %f %f", n(0), n(1), n(2));
+            // if (r == row_print && c == col_print)
+            // {
+            //     ROS_INFO("      pixel: (%d, %d)", r, c);
+                
+            //     ROS_INFO("      Z: %f", Z);
+            //     ROS_INFO("      Z_r: %f", Z_r);
+            //     ROS_INFO("      Z_c: %f", Z_c);
+
+            //     ROS_INFO("      dZ_dx: %f", dZ_dx);
+            //     ROS_INFO("      dZ_dy: %f", dZ_dy);
+
+            //     ROS_INFO("      dX_dx: %f", dX_dx);
+            //     ROS_INFO("      dY_dx: %f", dY_dx);
+            //     ROS_INFO("      dX_dy: %f", dX_dy);
+            //     ROS_INFO("      dY_dy: %f", dY_dy);    
+
+            //     ROS_INFO("      v_x: %f %f %f", v_x(0), v_x(1), v_x(2));
+            //     ROS_INFO("      v_y: %f %f %f", v_y(0), v_y(1), v_y(2));
+
+            //     ROS_INFO("      normal: %f %f %f", n(0), n(1), n(2));
+            // }
 
             // Set normal
             // normals->image.at<cv::Vec3b>(r, c)[2] = int(255 * std::abs(n(0))); // taking abs just to ensure RGB values are positive
