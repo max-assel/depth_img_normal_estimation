@@ -97,12 +97,13 @@ void NormalEstimator::runNormalEstimation()
 
     } else
     {
-        depth_img_preprocessed = depth_img.clone();
-        // cv::bilateralFilter(depth_img, 
-        //                     depth_img_preprocessed, 
-        //                     params.bilat_filter_kernel_size, 
-        //                     params.bilat_filter_sigma_color, 
-        //                     params.bilat_filter_sigma_space);
+        // depth_img_preprocessed = depth_img.clone();
+        cv::bilateralFilter(depth_img, 
+                            depth_img_preprocessed, 
+                            params.bilat_filter_kernel_size, 
+                            params.bilat_filter_sigma_color, 
+                            params.bilat_filter_sigma_space,
+                            cv::BORDER_REPLICATE);
     }
 
     // Publish filtered depth image
