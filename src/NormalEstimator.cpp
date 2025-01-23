@@ -1,5 +1,7 @@
 #include <depth_img_normal_estimation/NormalEstimator.h>
 
+float DELTA = std::numeric_limits<float>::epsilon();
+
 NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle, 
                                     const std::string & camera_depth_topic, 
                                     const std::string & config_path,
@@ -164,6 +166,10 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 {
     // ROS_INFO("[NormalEstimator::estimateNormals]");
 
+    // pad depth image by 1 pixel so we can calculate normals for last row/col
+    cv::Mat depth_img_padded;
+    cv::copyMakeBorder(depth_img, depth_img_padded, 0, 1, 0, 1, cv::BORDER_REPLICATE);
+
     float scale = 0.001; // 1000;
 
     // Normal estimation code
@@ -177,26 +183,30 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     float dX_dy = 0.0, dY_dy = 0.0;
     Eigen::Vector3f v_x, v_y, n;
 
-    int row_print = rows - 2;
-    int col_print = cols / 2;
+    // int row_print = rows - 2;
+    // int col_print = cols / 2;
 
-    for (int r = 0; r < (rows - 1); r++)
+    for (int r = 0; r < rows; r++)
     {
-        for (int c = 0; c < (cols - 1); c++)
+        for (int c = 0; c < cols; c++)
         {
             // ROS_INFO("      pixel: (%d, %d)", r, c);
 
             // Do something
-            Z = depth_img.at<float>(r, c) * scale;
-            Z_r = depth_img.at<float>(r + 1, c) * scale;
-            Z_c = depth_img.at<float>(r, c + 1) * scale;
+            Z = depth_img_padded.at<float>(r, c) * scale;
+
+            if (std::fabs(Z) < DELTA)
+                continue;
+
+            Z_r = depth_img_padded.at<float>(r + 1, c) * scale;
+            Z_c = depth_img_padded.at<float>(r, c + 1) * scale;
 
             // Calculate depth gradient
             dZ_dx = (Z_c - Z);
             dZ_dy = (Z_r - Z);
 
-            if (std::abs(dZ_dx) > params.depth_thresh || std::abs(dZ_dy) > params.depth_thresh)
-                continue;
+            // if (std::abs(dZ_dx) > params.depth_thresh || std::abs(dZ_dy) > params.depth_thresh)
+            //     continue;
 
             // Calculate X/Y gradients
             dX_dx = (Z / camera.fx) + dZ_dx * (c - camera.u_0) / camera.fx;
@@ -214,15 +224,18 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
             // ROS_INFO("      raw normal: %f %f %f", n(0), n(1), n(2));
 
-            // if (n.norm() == 0 && Z != 0)
-            // {
-            //     ROS_ERROR("      zero normal at pixel: (%d, %d)", r, c);
-            //     ROS_ERROR("      Z: %f", Z);
-            //     ROS_ERROR("      Z_r: %f", Z_r);
-            //     ROS_ERROR("      Z_c: %f", Z_c);
-            //     ROS_ERROR("      v_x: %f %f %f", v_x(0), v_x(1), v_x(2));
-            //     ROS_ERROR("      v_y: %f %f %f", v_y(0), v_y(1), v_y(2));
-            // }
+            bool zero_depth = std::fabs(Z) < DELTA;
+            bool zero_normal = n.norm() < DELTA;
+
+            if (zero_normal && !zero_depth)
+            {
+                ROS_ERROR("      zero normal at pixel: (%d, %d)", r, c);
+                ROS_ERROR("      Z: %f", Z);
+                ROS_ERROR("      Z_r: %f", Z_r);
+                ROS_ERROR("      Z_c: %f", Z_c);
+                ROS_ERROR("      v_x: %f %f %f", v_x(0), v_x(1), v_x(2));
+                ROS_ERROR("      v_y: %f %f %f", v_y(0), v_y(1), v_y(2));
+            }
 
             // Normalize normal
             n.normalize();
@@ -260,8 +273,8 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     }
 
     // take penultimate row/col and copy to last row/col
-    normals->image.row(rows - 1) = normals->image.row(rows - 2).clone();
-    normals->image.col(cols - 1) = normals->image.col(cols - 2).clone();
+    // normals->image.row(rows - 1) = normals->image.row(rows - 2).clone();
+    // normals->image.col(cols - 1) = normals->image.col(cols - 2).clone();
 
     // for (int c = 0; c < cols; c++)
     // {
@@ -294,21 +307,30 @@ void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImage
     int zero_depth_count = 0;
     int zero_normal_count = 0;
 
+    int depth_flag = -1;
+    int normal_flag = -1;
+
     for (int r = 0; r < rows; r++)
     {
         for (int c = 0; c < cols; c++)
         {
+            depth_flag = -1;
+            normal_flag = -1;
+
             if (depth_img.at<float>(r, c) != depth_img.at<float>(r, c))
             {
                 // ROS_ERROR_STREAM("Depth image has NaN value at row: " << r << ", col: " << c);
                 nan_depth_count++;
-            } else if (std::fabs(depth_img.at<float>(r, c)) < 1e-6)
+                depth_flag = 0;
+            } else if (std::fabs(depth_img.at<float>(r, c)) < DELTA)
             {
                 zero_depth_count++;
+                depth_flag = 1;
             } else
             {
                 // ROS_INFO_STREAM("Depth image value at row: " << r << ", col: " << c << " is: " << depth_img.at<float>(r, c));
                 finite_depth_count++;
+                depth_flag = 2;
             }
 
             if (normals_ptr->image.at<cv::Vec3f>(r, c)[0] != normals_ptr->image.at<cv::Vec3f>(r, c)[0] ||
@@ -317,13 +339,22 @@ void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImage
             {
                 // ROS_ERROR_STREAM("Normal image has NaN value at row: " << r << ", col: " << c);
                 nan_normal_count++;
-            } else if (  cv::norm(normals_ptr->image.at<cv::Vec3f>(r, c)) < 1e-6)
+                normal_flag = 0;
+            } else if (  cv::norm(normals_ptr->image.at<cv::Vec3f>(r, c)) < DELTA)
             {
                 zero_normal_count++;
+                normal_flag = 1;
             } else
             {
                 // ROS_INFO_STREAM("Normal image value at row: " << r << ", col: " << c << " is: " << normals_ptr->image.at<cv::Vec3f>(r, c));
                 finite_normal_count++;
+                normal_flag = 2;
+            }
+
+            if (depth_flag != normal_flag)
+            {
+                ROS_ERROR_STREAM("Depth and normal image values do not match at row: " << r << ", col: " << c);
+                ROS_ERROR_STREAM("Depth flag: " << depth_flag << ", Normal flag: " << normal_flag);
             }
         }
     }
