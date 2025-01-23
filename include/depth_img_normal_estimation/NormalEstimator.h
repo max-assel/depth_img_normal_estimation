@@ -52,6 +52,8 @@ class NormalEstimator
         std::mutex depth_img_mutex;
         ros::NodeHandle nodeHandle;
 
+        cv::Mat depth_img_padded;
+
         cv_bridge::CvImagePtr depth_img_ptr;
         cv_bridge::CvImagePtr filtered_depth_ptr;
         cv_bridge::CvImagePtr normals_ptr;
