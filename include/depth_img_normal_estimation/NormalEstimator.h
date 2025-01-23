@@ -34,6 +34,8 @@ class NormalEstimator
 
     private:
 
+        void checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals_ptr);
+
         void depthImgCallback(const sensor_msgs::Image::ConstPtr& msg);
 
         void estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals);

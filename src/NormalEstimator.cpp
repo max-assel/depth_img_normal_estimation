@@ -123,6 +123,8 @@ void NormalEstimator::runNormalEstimation()
 
     estimateNormals(depth_img_preprocessed, normals_ptr);
 
+    checkSparsity(depth_img_preprocessed, normals_ptr);
+
     // Query middle normal
     // int r = rows / 2;
     // int c = cols / 2;
@@ -212,6 +214,16 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
             // ROS_INFO("      raw normal: %f %f %f", n(0), n(1), n(2));
 
+            // if (n.norm() == 0 && Z != 0)
+            // {
+            //     ROS_ERROR("      zero normal at pixel: (%d, %d)", r, c);
+            //     ROS_ERROR("      Z: %f", Z);
+            //     ROS_ERROR("      Z_r: %f", Z_r);
+            //     ROS_ERROR("      Z_c: %f", Z_c);
+            //     ROS_ERROR("      v_x: %f %f %f", v_x(0), v_x(1), v_x(2));
+            //     ROS_ERROR("      v_y: %f %f %f", v_y(0), v_y(1), v_y(2));
+            // }
+
             // Normalize normal
             n.normalize();
 
@@ -266,4 +278,65 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     // }
 
     return;
+}
+
+void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals_ptr)
+{
+    int rows = depth_img.rows;
+    int cols = depth_img.cols;
+
+    int nan_depth_count = 0;
+    int nan_normal_count = 0;
+
+    int finite_depth_count = 0;
+    int finite_normal_count = 0;
+
+    int zero_depth_count = 0;
+    int zero_normal_count = 0;
+
+    for (int r = 0; r < rows; r++)
+    {
+        for (int c = 0; c < cols; c++)
+        {
+            if (depth_img.at<float>(r, c) != depth_img.at<float>(r, c))
+            {
+                // ROS_ERROR_STREAM("Depth image has NaN value at row: " << r << ", col: " << c);
+                nan_depth_count++;
+            } else if (std::fabs(depth_img.at<float>(r, c)) < 1e-6)
+            {
+                zero_depth_count++;
+            } else
+            {
+                // ROS_INFO_STREAM("Depth image value at row: " << r << ", col: " << c << " is: " << depth_img.at<float>(r, c));
+                finite_depth_count++;
+            }
+
+            if (normals_ptr->image.at<cv::Vec3f>(r, c)[0] != normals_ptr->image.at<cv::Vec3f>(r, c)[0] ||
+                normals_ptr->image.at<cv::Vec3f>(r, c)[1] != normals_ptr->image.at<cv::Vec3f>(r, c)[1] ||
+                normals_ptr->image.at<cv::Vec3f>(r, c)[2] != normals_ptr->image.at<cv::Vec3f>(r, c)[2])
+            {
+                // ROS_ERROR_STREAM("Normal image has NaN value at row: " << r << ", col: " << c);
+                nan_normal_count++;
+            } else if (  cv::norm(normals_ptr->image.at<cv::Vec3f>(r, c)) < 1e-6)
+            {
+                zero_normal_count++;
+            } else
+            {
+                // ROS_INFO_STREAM("Normal image value at row: " << r << ", col: " << c << " is: " << normals_ptr->image.at<cv::Vec3f>(r, c));
+                finite_normal_count++;
+            }
+        }
+    }
+
+
+    int total_pixels = rows * cols;
+
+    ROS_INFO_STREAM("Depth image NaN count: " << nan_depth_count);
+    ROS_INFO_STREAM("Depth image zero count: " << zero_depth_count);
+    ROS_INFO_STREAM("Depth image finite count: " << finite_depth_count);
+
+    ROS_INFO_STREAM("Normal image NaN count: " << nan_normal_count);
+    ROS_INFO_STREAM("Normal image zero count: " << zero_normal_count);
+    ROS_INFO_STREAM("Normal image finite count: " << finite_normal_count);
+
 }
