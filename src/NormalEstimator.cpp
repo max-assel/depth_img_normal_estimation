@@ -234,8 +234,8 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             dZ_dx = (Z_c - Z);
             dZ_dy = (Z_r - Z);
 
-            // if (std::abs(dZ_dx) > params.depth_thresh || std::abs(dZ_dy) > params.depth_thresh)
-            //     continue;
+            if (std::abs(dZ_dx) > params.depth_thresh || std::abs(dZ_dy) > params.depth_thresh)
+                continue;
 
             // Calculate X/Y gradients
             dX_dx = (Z / camera.fx) + dZ_dx * (c - camera.u_0) / camera.fx;
