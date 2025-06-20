@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 project(depth_img_normal_estimation)
 
-if(NOT CMAKE_CXX_STANDARD)
+if (NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
@@ -62,23 +63,23 @@ target_link_libraries(${PROJECT_NAME}_node
 ## Install ##
 #############
 
-# install(
-#   TARGETS ${PROJECT_NAME}
-#   EXPORT export_${PROJECT_NAME}
-#   ARCHIVE DESTINATION lib
-#   LIBRARY DESTINATION lib
-#   RUNTIME DESTINATION bin
-#  INCLUDES DESTINATION include/${PROJECT_NAME}
-# )
-# install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+ INCLUDES DESTINATION include/${PROJECT_NAME}
+)
+install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 
-# install(TARGETS 
-#         ${PROJECT_NAME}_node
-#         DESTINATION lib/${PROJECT_NAME}
-# )       
-# install(DIRECTORY config launch
-#         DESTINATION share/${PROJECT_NAME}/
-# )
+install(TARGETS 
+        ${PROJECT_NAME}_node
+        DESTINATION lib/${PROJECT_NAME}
+)       
+install(DIRECTORY cfg launch
+        DESTINATION share/${PROJECT_NAME}/
+)
 
 #############
 ## Testing ##

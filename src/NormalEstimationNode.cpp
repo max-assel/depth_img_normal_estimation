@@ -14,26 +14,30 @@
 
 void ros_throw_param_load(const rclcpp::Node::SharedPtr & nodePtr, const std::string & param_name, std::string & param)
 {
-    if (nodePtr->has_parameter(param_name))
-    {
-        param = nodePtr->get_parameter(param_name).as_string();
-    } else
-    {
-        throw std::runtime_error("Couldn't find parameter: " + param_name);
-    }
+    nodePtr->declare_parameter(param_name, "default");
+
+    // if (nodePtr->has_parameter(param_name))
+    // {
+    param = nodePtr->get_parameter(param_name).as_string();
+    // } else
+    // {
+        // throw std::runtime_error("Couldn't find parameter: " + param_name);
+    // }
 
     // return ros_throw_if( !nh.getParam(param_name, param), "Couldn't find parameter: " + param_name);
 }
 
 void ros_throw_param_load(const rclcpp::Node::SharedPtr & nodePtr, const std::string & param_name, bool & param)
 {
-    if (nodePtr->has_parameter(param_name))
-    {
-        param = nodePtr->get_parameter(param_name).as_bool();
-    } else
-    {
-        throw std::runtime_error("Couldn't find parameter: " + param_name);
-    }    
+    nodePtr->declare_parameter(param_name, false);
+
+    // if (nodePtr->has_parameter(param_name))
+    // {
+    param = nodePtr->get_parameter(param_name).as_bool();
+    // } else
+    // {
+        // throw std::runtime_error("Couldn't find parameter: " + param_name);
+    // }    
     // return ros_throw_if( !nh.getParam(param_name, param), "Couldn't find parameter: " + param_name);
 }
 
@@ -43,19 +47,19 @@ int main(int argc, char** argv)
     // ros::init(argc, argv, "normal_estimation_node");
     // ros::NodeHandle nodeHandle;
     rclcpp::init(argc, argv);
-    rclcpp::Node::SharedPtr nodePtr = rclcpp::Node::make_shared("normal_estimation_node");
+    rclcpp::Node::SharedPtr nodePtr = rclcpp::Node::make_shared("depth_img_normal_estimation_node");
 
     // ros::Rate loop_rate(30);
     rclcpp::Rate loop_rate(30);
 
     std::string camera_depth_topic;
-    ros_throw_param_load(nodePtr, "/camera_depth_topic", camera_depth_topic);
+    ros_throw_param_load(nodePtr, "camera_depth_topic", camera_depth_topic);
 
     std::string config_path;
-    ros_throw_param_load(nodePtr, "/config_path", config_path);
+    ros_throw_param_load(nodePtr, "config_path", config_path);
 
     bool hardware;
-    ros_throw_param_load(nodePtr, "/hardware", hardware);
+    ros_throw_param_load(nodePtr, "hardware", hardware);
 
     // Create NormalEstimator object
     NormalEstimator normalEstimator(nodePtr, camera_depth_topic, config_path, hardware);

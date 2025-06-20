@@ -20,6 +20,7 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
     filtered_depth_pub = it.advertise("/camera/depth/filtered", 1);
 
     // Load configs
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        config_path: " << config_path);
     YAML::Node configYamlNode = YAML::LoadFile(config_path);
 
     params.depth_thresh = configYamlNode["normal_estimation"]["depth_threshold"].as<float>();
