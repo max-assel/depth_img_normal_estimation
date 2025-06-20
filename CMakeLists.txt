@@ -1,32 +1,26 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 project(depth_img_normal_estimation)
 
-set(CATKIN_PACKAGE_DEPENDENCIES
-    roscpp
-    roslib
-    cv_bridge
-    image_transport
-    )
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-find_package(catkin REQUIRED COMPONENTS
-          ${CATKIN_PACKAGE_DEPENDENCIES}
-        )
+## Find ament_cmake macros and libraries
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(image_transport REQUIRED)
 
+## Eigen3
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
-###################################
-## catkin specific configuration ##
-###################################
-
-catkin_package(
-   INCLUDE_DIRS 
-        include
-        ${EIGEN3_INCLUDE_DIRS}
-   LIBRARIES
-        ${PROJECT_NAME}
-        yaml-cpp
-   CATKIN_DEPENDS
-        ${CATKIN_PACKAGE_DEPENDENCIES}
+set(dependencies
+        rclcpp
+        cv_bridge
+        image_transport
 )
 
 ###########
@@ -34,9 +28,8 @@ catkin_package(
 ###########
 
 include_directories(
-        include
-        ${catkin_INCLUDE_DIRS}
-        ${EIGEN3_INCLUDE_DIRS}
+  include
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 # Main library
@@ -44,46 +37,54 @@ add_library(${PROJECT_NAME}
     src/NormalEstimator.cpp
 )
 
-add_dependencies(${PROJECT_NAME} 
-              ${${PROJECT_NAME}_EXPORTED_TARGETS} 
-              ${catkin_EXPORTED_TARGETS})
+ament_target_dependencies(${PROJECT_NAME} 
+                                ${dependencies})
 
 target_link_libraries(${PROJECT_NAME}
-        ${catkin_LIBRARIES}
-        yaml-cpp
-        )
+                       yaml-cpp
+                       )
 
-target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
+# target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
 
 ## Declare a C++ executable
 
 # Normal estimation node
-add_executable(normal_estimation_node
-        src/NormalEstimationNode.cpp
-        )
-add_dependencies(normal_estimation_node
+add_executable(${PROJECT_NAME}_node src/NormalEstimationNode.cpp )
+
+ament_target_dependencies(${PROJECT_NAME}_node
+                                ${dependencies}
+)
+target_link_libraries(${PROJECT_NAME}_node
         ${PROJECT_NAME}
-        ${${PROJECT_NAME}_EXPORTED_TARGETS}
-        ${catkin_EXPORTED_TARGETS}
-        )
-target_link_libraries(normal_estimation_node
-        ${PROJECT_NAME}
-        ${catkin_LIBRARIES}
-        )
+)
 
 #############
 ## Install ##
 #############
 
-install(DIRECTORY include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-        )
-install(TARGETS ${PROJECT_NAME}
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-        )
+# install(
+#   TARGETS ${PROJECT_NAME}
+#   EXPORT export_${PROJECT_NAME}
+#   ARCHIVE DESTINATION lib
+#   LIBRARY DESTINATION lib
+#   RUNTIME DESTINATION bin
+#  INCLUDES DESTINATION include/${PROJECT_NAME}
+# )
+# install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+
+# install(TARGETS 
+#         ${PROJECT_NAME}_node
+#         DESTINATION lib/${PROJECT_NAME}
+# )       
+# install(DIRECTORY config launch
+#         DESTINATION share/${PROJECT_NAME}/
+# )
 
 #############
 ## Testing ##
 #############
+
+# ament_export_dependencies(${dependencies})  
+# ament_export_include_directories("include/${PROJECT_NAME}")
+# ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_package()

@@ -1,18 +1,21 @@
 #pragma once
 
-#include <ros/ros.h>
+// #include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include <sensor_msgs/Image.h>
+// #include <sensor_msgs/Image.h>
+#include <sensor_msgs/msg/image.hpp>
 
 // Include opencv2
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 // Include CvBridge, Image Transport, Image msg
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
+
 #include <cv_bridge/cv_bridge.h>
 
 #include <yaml-cpp/yaml.h>
@@ -25,7 +28,7 @@ class NormalEstimator
 {
     public:
 
-        NormalEstimator(ros::NodeHandle & nodeHandle,
+        NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
                         const std::string & camera_depth_topic, 
                         const std::string & config_path,
                         const bool & hardware);
@@ -36,7 +39,7 @@ class NormalEstimator
 
         void checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals_ptr);
 
-        void depthImgCallback(const sensor_msgs::Image::ConstPtr& msg);
+        void depthImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& msg);
 
         void estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals);
 
@@ -50,7 +53,8 @@ class NormalEstimator
         image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
 
         std::mutex depth_img_mutex;
-        ros::NodeHandle nodeHandle;
+        // ros::NodeHandle nodeHandle;
+        rclcpp::Node::SharedPtr nodePtr_;
 
         cv::Mat depth_img_padded;
 

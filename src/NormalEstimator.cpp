@@ -2,12 +2,14 @@
 
 float DELTA = std::numeric_limits<float>::epsilon();
 
-NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle, 
+NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr, 
                                     const std::string & camera_depth_topic, 
                                     const std::string & config_path,
                                     const bool & hardware)
 {
-    image_transport::ImageTransport it(nodeHandle);
+    nodePtr_ = nodePtr;
+
+    image_transport::ImageTransport it(nodePtr_);
 
     // Initialize subscriber
     depth_img_sub = it.subscribe(camera_depth_topic, 1, &NormalEstimator::depthImgCallback, this);
@@ -34,7 +36,7 @@ NormalEstimator::NormalEstimator(ros::NodeHandle & nodeHandle,
     normals_bgr_ptr.reset(new cv_bridge::CvImage);
 }
 
-void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
+void NormalEstimator::depthImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& msg)
 {
     // std::lock_guard<std::mutex> lock(depth_img_mutex);
 
@@ -46,7 +48,7 @@ void NormalEstimator::depthImgCallback(const sensor_msgs::Image::ConstPtr& msg)
         // ROS_INFO("      received new depth image");
     } catch (std::exception& e)
     {
-        ROS_ERROR("       depthImgCallback failed: %s", e.what());
+        RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "       depthImgCallback failed: " << e.what());
         return;
     }       
 
@@ -65,14 +67,14 @@ void NormalEstimator::runNormalEstimation()
 
     if (notReceivedDepthImage())
     {
-        ROS_WARN("Not ready to estimate normals, no depth image received yet.");
+        RCLCPP_WARN_STREAM(nodePtr_->get_logger(), "Not ready to estimate normals, no depth image received yet.");
         return;
     }
 
     // Read depth image
     cv::Mat depth_img = depth_img_ptr->image;
-    int rows = depth_img.rows;
-    int cols = depth_img.cols;
+    // int rows = depth_img.rows;
+    // int cols = depth_img.cols;
 
     // Pre-process depth image
     cv::Mat depth_img_preprocessed;
@@ -178,22 +180,22 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     float Z = 0.0, Z_r = 0.0, Z_c = 0.0;
     float dZ_dx = 0.0, dZ_dy = 0.0;
 
-    // ROS_INFO_STREAM("Extrapolating ...");
+    // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Extrapolating ...");
     for (int c = 0; c < cols; c++)
     {
-        // ROS_INFO_STREAM("      col: " << c);
+        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      col: " << c);
         Z = depth_img.at<float>(rows - 2, c) * scale;
         Z_r = depth_img.at<float>(rows - 1, c) * scale;
 
-        // ROS_INFO_STREAM("      depth at pixel: (" << rows - 2 << ", " << c << ") is: " << Z);
-        // ROS_INFO_STREAM("      depth at pixel: (" << rows - 1 << ", " << c << ") is: " << Z_r);
+        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << rows - 2 << ", " << c << ") is: " << Z);
+        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << rows - 1 << ", " << c << ") is: " << Z_r);
 
         // Calculate depth gradient
         dZ_dy = (Z_r - Z);
 
         depth_img_padded.at<float>(rows, c) = (Z_r + dZ_dy) / scale;
 
-        // ROS_INFO_STREAM("      depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
+        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
 
     }
 
@@ -212,8 +214,8 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     float dX_dy = 0.0, dY_dy = 0.0;
     Eigen::Vector3f v_x, v_y, n;
 
-    int row_print = rows - 1;
-    int col_print = cols / 2;
+    // int row_print = rows - 1;
+    // int col_print = cols / 2;
 
     for (int r = 0; r < rows; r++)
     {
@@ -253,8 +255,8 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
             // ROS_INFO("      raw normal: %f %f %f", n(0), n(1), n(2));
 
-            bool zero_depth = std::fabs(Z) < DELTA;
-            bool zero_normal = n.norm() < DELTA;
+            // bool zero_depth = std::fabs(Z) < DELTA;
+            // bool zero_normal = n.norm() < DELTA;
 
             // if (zero_normal && !zero_depth)
             // {
@@ -348,7 +350,7 @@ void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImage
 
             if (depth_img.at<float>(r, c) != depth_img.at<float>(r, c))
             {
-                // ROS_ERROR_STREAM("Depth image has NaN value at row: " << r << ", col: " << c);
+                // RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth image has NaN value at row: " << r << ", col: " << c);
                 nan_depth_count++;
                 depth_flag = 0;
             } else if (std::fabs(depth_img.at<float>(r, c)) < DELTA)
@@ -357,7 +359,7 @@ void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImage
                 depth_flag = 1;
             } else
             {
-                // ROS_INFO_STREAM("Depth image value at row: " << r << ", col: " << c << " is: " << depth_img.at<float>(r, c));
+                // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image value at row: " << r << ", col: " << c << " is: " << depth_img.at<float>(r, c));
                 finite_depth_count++;
                 depth_flag = 2;
             }
@@ -366,7 +368,7 @@ void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImage
                 normals_ptr->image.at<cv::Vec3f>(r, c)[1] != normals_ptr->image.at<cv::Vec3f>(r, c)[1] ||
                 normals_ptr->image.at<cv::Vec3f>(r, c)[2] != normals_ptr->image.at<cv::Vec3f>(r, c)[2])
             {
-                // ROS_ERROR_STREAM("Normal image has NaN value at row: " << r << ", col: " << c);
+                // RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Normal image has NaN value at row: " << r << ", col: " << c);
                 nan_normal_count++;
                 normal_flag = 0;
             } else if (  cv::norm(normals_ptr->image.at<cv::Vec3f>(r, c)) < DELTA)
@@ -375,28 +377,27 @@ void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImage
                 normal_flag = 1;
             } else
             {
-                // ROS_INFO_STREAM("Normal image value at row: " << r << ", col: " << c << " is: " << normals_ptr->image.at<cv::Vec3f>(r, c));
+                // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image value at row: " << r << ", col: " << c << " is: " << normals_ptr->image.at<cv::Vec3f>(r, c));
                 finite_normal_count++;
                 normal_flag = 2;
             }
 
             if (depth_flag != normal_flag)
             {
-                ROS_ERROR_STREAM("Depth and normal image values do not match at row: " << r << ", col: " << c);
-                ROS_ERROR_STREAM("Depth flag: " << depth_flag << ", Normal flag: " << normal_flag);
+                RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth and normal image values do not match at row: " << r << ", col: " << c);
+                RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth flag: " << depth_flag << ", Normal flag: " << normal_flag);
             }
         }
     }
 
 
-    int total_pixels = rows * cols;
+    // int total_pixels = rows * cols;
 
-    ROS_INFO_STREAM("Depth image NaN count: " << nan_depth_count);
-    ROS_INFO_STREAM("Depth image zero count: " << zero_depth_count);
-    ROS_INFO_STREAM("Depth image finite count: " << finite_depth_count);
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image NaN count: " << nan_depth_count);
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image zero count: " << zero_depth_count);
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image finite count: " << finite_depth_count);
 
-    ROS_INFO_STREAM("Normal image NaN count: " << nan_normal_count);
-    ROS_INFO_STREAM("Normal image zero count: " << zero_normal_count);
-    ROS_INFO_STREAM("Normal image finite count: " << finite_normal_count);
-
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image NaN count: " << nan_normal_count);
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image zero count: " << zero_normal_count);
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image finite count: " << finite_normal_count);
 }
