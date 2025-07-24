@@ -14,7 +14,7 @@
 
 void ros_throw_param_load(const rclcpp::Node::SharedPtr & nodePtr, const std::string & param_name, std::string & param)
 {
-    nodePtr->declare_parameter(param_name, "default");
+    // nodePtr->declare_parameter(param_name, "default");
 
     // if (nodePtr->has_parameter(param_name))
     // {
@@ -29,7 +29,7 @@ void ros_throw_param_load(const rclcpp::Node::SharedPtr & nodePtr, const std::st
 
 void ros_throw_param_load(const rclcpp::Node::SharedPtr & nodePtr, const std::string & param_name, bool & param)
 {
-    nodePtr->declare_parameter(param_name, false);
+    // nodePtr->declare_parameter(param_name, false);
 
     // if (nodePtr->has_parameter(param_name))
     // {
@@ -47,7 +47,10 @@ int main(int argc, char** argv)
     // ros::init(argc, argv, "normal_estimation_node");
     // ros::NodeHandle nodeHandle;
     rclcpp::init(argc, argv);
-    rclcpp::Node::SharedPtr nodePtr = rclcpp::Node::make_shared("depth_img_normal_estimation_node");
+    rclcpp::Node::SharedPtr nodePtr = rclcpp::Node::make_shared("depth_img_normal_estimation_node",
+                                                                rclcpp::NodeOptions()
+                                                                .allow_undeclared_parameters(true)
+                                                                .automatically_declare_parameters_from_overrides(true));
 
     // ros::Rate loop_rate(30);
     rclcpp::Rate loop_rate(30);
