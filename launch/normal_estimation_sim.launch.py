@@ -9,6 +9,7 @@ from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 
 def generate_launch_description():
     ld = launch.LaunchDescription([
+        launch_ros.actions.SetParameter(name='use_sim_time', value=True),
         DeclareLaunchArgument(
             "use_sim_time", default_value="true", description="Use simulation (Gazebo) clock if true"
         ),        

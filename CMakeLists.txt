@@ -18,6 +18,12 @@ find_package(image_transport REQUIRED)
 ## Eigen3
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
 set(dependencies
         rclcpp
         cv_bridge
@@ -55,6 +61,13 @@ add_executable(${PROJECT_NAME}_node src/NormalEstimationNode.cpp )
 ament_target_dependencies(${PROJECT_NAME}_node
                                 ${dependencies}
 )
+target_compile_options(${PROJECT_NAME}_node PRIVATE 
+                        -ftree-vectorize 
+                        -fopt-info-loop-optimized=vec_${PROJECT_NAME}_node.txt 
+                        -funsafe-math-optimizations 
+                        -fno-math-errno 
+                        -ffinite-math-only #-ffinite-math-only and -fno-trapping-math.
+   )
 target_link_libraries(${PROJECT_NAME}_node
         ${PROJECT_NAME}
 )
