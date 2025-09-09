@@ -23,7 +23,7 @@ def generate_launch_description():
                     'use_sim_time': LaunchConfiguration("use_sim_time")
                 },
                 {
-                    'camera_depth_topic': '/camera/depth/image_rect_raw'
+                    'camera_depth_topic': '/D435/depth/image_rect_raw'
                 },
                 {
                     'config_path': get_package_share_directory('depth_img_normal_estimation') + '/cfg/hardware.yaml'
