@@ -3,7 +3,8 @@
 float DELTA = std::numeric_limits<float>::epsilon();
 
 NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr, 
-                                    const std::string & camera_depth_topic, 
+                                    const std::string & camera_depth_topic,
+                                    const std::string & camera_normals_topic, 
                                     const std::string & config_path,
                                     const bool & hardware)
 {
@@ -15,9 +16,9 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
     depth_img_sub = it.subscribe(camera_depth_topic, 1, &NormalEstimator::depthImgCallback, this);
 
     // Initialize publishers
-    normals_pub = it.advertise("/camera/normals", 1);
-    normals_bgr_img_pub = it.advertise("/camera/color_normals", 1);
-    filtered_depth_pub = it.advertise("/camera/depth/filtered", 1);
+    normals_pub = it.advertise(camera_normals_topic, 1);
+    normals_bgr_img_pub = it.advertise(camera_normals_topic + "/colored", 1);
+    // filtered_depth_pub = it.advertise("/camera/depth/filtered", 1);
 
     // Load configs
     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        config_path: " << config_path);
@@ -32,7 +33,7 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
 
     hardware_ = hardware;
 
-    filtered_depth_ptr.reset(new cv_bridge::CvImage);
+    // filtered_depth_ptr.reset(new cv_bridge::CvImage);
     normals_ptr.reset(new cv_bridge::CvImage);
     normals_bgr_ptr.reset(new cv_bridge::CvImage);
 }
@@ -73,51 +74,51 @@ void NormalEstimator::runNormalEstimation()
     }
 
     // Read depth image
-    cv::Mat depth_img = depth_img_ptr->image;
+    depth_img = depth_img_ptr->image;
     // int rows = depth_img.rows;
     // int cols = depth_img.cols;
 
-    // Pre-process depth image
-    cv::Mat depth_img_preprocessed;
+    // // Pre-process depth image
+    // cv::Mat depth_img_preprocessed;
         
-    if (hardware_)
-    {
-        // bilateral filter
-        for (int i = 0; i < params.bilat_filter_num_iters; i++)
-        {
-            cv::Mat temp_img; 
-            cv::bilateralFilter(depth_img, 
-                                temp_img, 
-                                params.bilat_filter_kernel_size, 
-                                params.bilat_filter_sigma_color, 
-                                params.bilat_filter_sigma_space);
-            depth_img = temp_img;
-        }
+    // if (hardware_)
+    // {
+    //     // bilateral filter
+    //     for (int i = 0; i < params.bilat_filter_num_iters; i++)
+    //     {
+    //         cv::Mat temp_img; 
+    //         cv::bilateralFilter(depth_img, 
+    //                             temp_img, 
+    //                             params.bilat_filter_kernel_size, 
+    //                             params.bilat_filter_sigma_color, 
+    //                             params.bilat_filter_sigma_space);
+    //         depth_img = temp_img;
+    //     }
 
 
-        // shadow infill
-        cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
+    //     // shadow infill
+    //     cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
 
-        cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
+    //     cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
 
-    } else
-    {
-        // depth_img_preprocessed = depth_img.clone();
-        cv::bilateralFilter(depth_img, 
-                            depth_img_preprocessed, 
-                            params.bilat_filter_kernel_size, 
-                            params.bilat_filter_sigma_color, 
-                            params.bilat_filter_sigma_space,
-                            cv::BORDER_REPLICATE);
-    }
+    // } else
+    // {
+    //     // depth_img_preprocessed = depth_img.clone();
+    //     cv::bilateralFilter(depth_img, 
+    //                         depth_img_preprocessed, 
+    //                         params.bilat_filter_kernel_size, 
+    //                         params.bilat_filter_sigma_color, 
+    //                         params.bilat_filter_sigma_space,
+    //                         cv::BORDER_REPLICATE);
+    // }
 
-    // Publish filtered depth image
-    // cv_bridge::CvImagePtr filtered_depth_ptr(new cv_bridge::CvImage);
-    filtered_depth_ptr->header = depth_img_ptr->header;
-    filtered_depth_ptr->encoding = "32FC1";
-    filtered_depth_ptr->image = depth_img_preprocessed;
+    // // Publish filtered depth image
+    // // cv_bridge::CvImagePtr filtered_depth_ptr(new cv_bridge::CvImage);
+    // filtered_depth_ptr->header = depth_img_ptr->header;
+    // filtered_depth_ptr->encoding = "32FC1";
+    // filtered_depth_ptr->image = depth_img_preprocessed;
 
-    filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
+    // filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
 
     // Normals
     // set size as h x w x 3
@@ -126,9 +127,9 @@ void NormalEstimator::runNormalEstimation()
     normals_ptr->encoding = "32FC3";                                            
     normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_32FC3, cv::Scalar(0.0, 0.0, 0.0));
 
-    estimateNormals(depth_img_preprocessed, normals_ptr);
+    estimateNormals(depth_img, normals_ptr);
 
-    // checkSparsity(depth_img_preprocessed, normals_ptr);
+    // checkSparsity(depth_img, normals_ptr);
 
     // Query middle normal
     // int r = rows / 2;
@@ -172,7 +173,6 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     // pad depth image by 1 pixel so we can calculate normals for last row/col
     cv::copyMakeBorder(depth_img, depth_img_padded, 0, 1, 0, 1, cv::BORDER_CONSTANT, 0);
 
-    float scale = 0.001; // 1000;
 
     // Normal estimation code
 

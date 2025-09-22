@@ -26,6 +26,9 @@ def generate_launch_description():
                     'camera_depth_topic': '/D435/depth/image_rect_raw'
                 },
                 {
+                    'camera_normals_topic': '/D435/normals'
+                },
+                {
                     'config_path': get_package_share_directory('depth_img_normal_estimation') + '/cfg/hardware.yaml'
                 },
                 {

@@ -30,6 +30,7 @@ class NormalEstimator
 
         NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
                         const std::string & camera_depth_topic, 
+                        const std::string & camera_normals_topic, 
                         const std::string & config_path,
                         const bool & hardware);
 
@@ -50,20 +51,24 @@ class NormalEstimator
         image_transport::Subscriber depth_img_sub;
         image_transport::Publisher normals_pub; /**< estimated normals image publisher */
         image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
-        image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
+        // image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
 
         std::mutex depth_img_mutex;
         // ros::NodeHandle nodeHandle;
         rclcpp::Node::SharedPtr nodePtr_;
 
+        cv::Mat depth_im;
+
         cv::Mat depth_img_padded;
 
         cv_bridge::CvImagePtr depth_img_ptr;
-        cv_bridge::CvImagePtr filtered_depth_ptr;
+        // cv_bridge::CvImagePtr filtered_depth_ptr;
         cv_bridge::CvImagePtr normals_ptr;
         cv_bridge::CvImagePtr normals_bgr_ptr;
 
         bool hardware_;
+
+        float scale = 0.001; // 1000;
 
         PinholeCamera camera;
 

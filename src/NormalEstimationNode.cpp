@@ -55,6 +55,9 @@ int main(int argc, char** argv)
     // ros::Rate loop_rate(30);
     rclcpp::Rate loop_rate(30);
 
+    std::string camera_normals_topic;
+    ros_throw_param_load(nodePtr, "camera_normals_topic", camera_normals_topic);
+
     std::string camera_depth_topic;
     ros_throw_param_load(nodePtr, "camera_depth_topic", camera_depth_topic);
 
@@ -65,7 +68,7 @@ int main(int argc, char** argv)
     ros_throw_param_load(nodePtr, "hardware", hardware);
 
     // Create NormalEstimator object
-    NormalEstimator normalEstimator(nodePtr, camera_depth_topic, config_path, hardware);
+    NormalEstimator normalEstimator(nodePtr, camera_depth_topic, camera_normals_topic, config_path, hardware);
 
     // ros::spin();
     rclcpp::spin(nodePtr);
