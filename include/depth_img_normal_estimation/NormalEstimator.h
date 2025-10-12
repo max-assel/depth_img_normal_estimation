@@ -57,7 +57,7 @@ class NormalEstimator
         // ros::NodeHandle nodeHandle;
         rclcpp::Node::SharedPtr nodePtr_;
 
-        cv::Mat depth_im;
+        cv::Mat depth_img;
 
         cv::Mat depth_img_padded;
 
