@@ -348,7 +348,7 @@ void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImage
         for (int c = 0; c < cols; c++)
         {
             depth_flag = -1;
-            normal_flag = -1;
+            normal_flag = -1; 
 
             if (depth_img.at<float>(r, c) != depth_img.at<float>(r, c))
             {
