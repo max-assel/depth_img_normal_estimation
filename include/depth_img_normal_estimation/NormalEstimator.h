@@ -1,5 +1,9 @@
 #pragma once
 
+#include <chrono>
+#include <fstream>
+#include <string>
+
 // #include <ros/ros.h>
 #include "rclcpp/rclcpp.hpp"
 
@@ -33,9 +37,13 @@ class NormalEstimator
                         const std::string & config_path,
                         const bool & hardware);
 
+        // ~NormalEstimator();
+
         void runNormalEstimation();
 
     private:
+
+        void log();
 
         void checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals_ptr);
 
@@ -66,6 +74,28 @@ class NormalEstimator
         bool hardware_;
 
         PinholeCamera camera;
+
+        std::chrono::steady_clock::time_point initTime;
+
+        std::chrono::steady_clock::time_point totalBegin;
+        std::chrono::steady_clock::time_point totalEnd;
+        float totalTimeTaken = 0.0f;
+        int numberOfTotalCalls = 0;
+
+        std::chrono::steady_clock::time_point preprocessBegin;
+        std::chrono::steady_clock::time_point preprocessEnd;
+        float preprocessTimeTaken = 0.0f;
+        int numberOfPreprocessCalls = 0;
+
+        std::chrono::steady_clock::time_point paddingBegin;
+        std::chrono::steady_clock::time_point paddingEnd;
+        float paddingTimeTaken = 0.0f;
+        int numberOfPaddingCalls = 0;
+
+        std::chrono::steady_clock::time_point depthGradientsBegin;
+        std::chrono::steady_clock::time_point depthGradientsEnd;
+        float depthGradientsTimeTaken = 0.0f;
+        int numberOfDepthGradientsCalls = 0;
 
         struct NormalEstimationParams
         {

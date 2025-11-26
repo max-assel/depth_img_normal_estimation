@@ -35,6 +35,24 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
     filtered_depth_ptr.reset(new cv_bridge::CvImage);
     normals_ptr.reset(new cv_bridge::CvImage);
     normals_bgr_ptr.reset(new cv_bridge::CvImage);
+
+    initTime = std::chrono::steady_clock::now();
+}
+
+void NormalEstimator::log()
+{
+    // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::~NormalEstimator]");
+    std::ofstream logFile;
+    logFile.open("/home/masselmeier3/Desktop/Research/quad_pips_experiments/timing/superpixels/normals/timing_log_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(initTime.time_since_epoch()).count()) + ".csv", std::ios::out);
+
+    float averagePreprocessTime = preprocessTimeTaken * 1.0e-3 / static_cast<float>(numberOfPreprocessCalls);
+    float averagePaddingTime = paddingTimeTaken * 1.0e-3 / static_cast<float>(numberOfPaddingCalls);
+    float averageDepthGradientsTime = depthGradientsTimeTaken * 1.0e-3 / static_cast<float>(numberOfDepthGradientsCalls);
+    float averageTotalTime = totalTimeTaken * 1.0e-3 / static_cast<float>(numberOfTotalCalls);
+
+    logFile << "avg preprocess time (ms), avg padding time (ms), avg depth gradients time (ms), avg total time (ms), number of calls" << std::endl;
+    logFile << averagePreprocessTime << ", " << averagePaddingTime << ", " << averageDepthGradientsTime << ", " << averageTotalTime << ", " << numberOfTotalCalls << std::endl;
+    logFile.close();
 }
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& msg)
@@ -71,6 +89,10 @@ void NormalEstimator::runNormalEstimation()
         RCLCPP_WARN_STREAM(nodePtr_->get_logger(), "Not ready to estimate normals, no depth image received yet.");
         return;
     }
+
+    totalBegin = std::chrono::steady_clock::now();
+
+    preprocessBegin = std::chrono::steady_clock::now();
 
     // Read depth image
     cv::Mat depth_img = depth_img_ptr->image;
@@ -119,6 +141,10 @@ void NormalEstimator::runNormalEstimation()
 
     filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
 
+    preprocessEnd = std::chrono::steady_clock::now();
+    preprocessTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(preprocessEnd - preprocessBegin).count();
+    numberOfPreprocessCalls++;
+
     // Normals
     // set size as h x w x 3
     // cv_bridge::CvImagePtr normals_ptr(new cv_bridge::CvImage);
@@ -156,6 +182,12 @@ void NormalEstimator::runNormalEstimation()
     // Display normals
     publishNormals(normals_ptr, normals_bgr_ptr);
 
+    totalEnd = std::chrono::steady_clock::now();
+    totalTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(totalEnd - totalBegin).count();
+    numberOfTotalCalls++;
+
+    log();
+
     return;
 }
 
@@ -168,6 +200,8 @@ void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals, const
 void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals)
 {
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::estimateNormals]");
+
+    paddingBegin = std::chrono::steady_clock::now();
 
     // pad depth image by 1 pixel so we can calculate normals for last row/col
     cv::copyMakeBorder(depth_img, depth_img_padded, 0, 1, 0, 1, cv::BORDER_CONSTANT, 0);
@@ -217,6 +251,12 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
         depth_img_padded.at<float>(r, cols) = (Z_c + dZ_dx) * inv_scale;
     }
 
+    paddingEnd = std::chrono::steady_clock::now();
+    paddingTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(paddingEnd - paddingBegin).count();
+    numberOfPaddingCalls++;
+
+
+    depthGradientsBegin = std::chrono::steady_clock::now();
     float dX_dx = 0.0, dY_dx = 0.0;
     float dX_dy = 0.0, dY_dy = 0.0;
     Eigen::Vector3f v_x(0.0, 0.0, 0.0), v_y(0.0, 0.0, 0.0), n(0.0, 0.0, 0.0);
@@ -315,6 +355,10 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             normals->image.at<cv::Vec3f>(r, c)[2] = n(2);
         }
     }
+
+    depthGradientsEnd = std::chrono::steady_clock::now();
+    depthGradientsTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(depthGradientsEnd - depthGradientsBegin).count();
+    numberOfDepthGradientsCalls++;
 
     // // Check last row and last col
     // for (int c = 0; c < cols; c++)
