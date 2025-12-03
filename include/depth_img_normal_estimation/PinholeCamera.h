@@ -7,6 +7,8 @@ struct PinholeCamera
 {
     double fx; // focal length x
     double fy; // focal length y
+    double inv_fx; // 1 / focal length x (for efficiency)
+    double inv_fy; // 1 / focal length y (for efficiency)
     double u_0; // optical center x
     double v_0; // optical center y
     double k1; // radial distortion coefficient
@@ -21,6 +23,8 @@ struct PinholeCamera
     {
         fx = 347.997;
         fy = 347.997;
+        inv_fx = 1.0 / fx;
+        inv_fy = 1.0 / fy;
         width = 640;
         height = 480;
         u_0 = width / 2.0;
