@@ -186,7 +186,7 @@ void NormalEstimator::runNormalEstimation()
     totalTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(totalEnd - totalBegin).count();
     numberOfTotalCalls++;
 
-    log();
+    // log();
 
     return;
 }
