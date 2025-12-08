@@ -16,14 +16,81 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='depth_img_normal_estimation',
             executable='depth_img_normal_estimation_node',
-            name='depth_img_normal_estimation_node',
+            name='depth_img_normal_estimation_node_camera0',
             output='screen',
             parameters=[
                 {
                     'use_sim_time': LaunchConfiguration("use_sim_time")
                 },
                 {
-                    'camera_depth_topic': '/camera/depth/image_raw'
+                    'camera_depth_topic': '/camera0/depth/image_raw'
+                },
+                {
+                    'camera_normals_topic': '/camera0/normals'
+                },
+                {
+                    'camera_bgr_normals_topic': '/camera0/bgr_normals'
+                },
+                {
+                    'filtered_depth_topic': '/camera0/filtered_depth'
+                },
+                {
+                    'config_path': get_package_share_directory('depth_img_normal_estimation') + '/cfg/sim.yaml'
+                },
+                {
+                    'hardware': False
+                }
+            ]
+        ),
+        launch_ros.actions.Node(
+            package='depth_img_normal_estimation',
+            executable='depth_img_normal_estimation_node',
+            name='depth_img_normal_estimation_node_camera1',
+            output='screen',
+            parameters=[
+                {
+                    'use_sim_time': LaunchConfiguration("use_sim_time")
+                },
+                {
+                    'camera_depth_topic': '/camera1/depth/image_raw'
+                },
+                {
+                    'camera_normals_topic': '/camera1/normals'
+                },
+                {
+                    'camera_bgr_normals_topic': '/camera1/bgr_normals'
+                },
+                {
+                    'filtered_depth_topic': '/camera1/filtered_depth'
+                },
+                {
+                    'config_path': get_package_share_directory('depth_img_normal_estimation') + '/cfg/sim.yaml'
+                },
+                {
+                    'hardware': False
+                }
+            ]
+        ),
+        launch_ros.actions.Node(
+            package='depth_img_normal_estimation',
+            executable='depth_img_normal_estimation_node',
+            name='depth_img_normal_estimation_node_camera2',
+            output='screen',
+            parameters=[
+                {
+                    'use_sim_time': LaunchConfiguration("use_sim_time")
+                },
+                {
+                    'camera_depth_topic': '/camera2/depth/image_raw'
+                },
+                {
+                    'camera_normals_topic': '/camera2/normals'
+                },
+                {
+                    'camera_bgr_normals_topic': '/camera2/bgr_normals'
+                },
+                {
+                    'filtered_depth_topic': '/camera2/filtered_depth'
                 },
                 {
                     'config_path': get_package_share_directory('depth_img_normal_estimation') + '/cfg/sim.yaml'
@@ -33,7 +100,7 @@ def generate_launch_description():
                 }
             ]
         )
-    ])
+    ])    
     return ld
 
 

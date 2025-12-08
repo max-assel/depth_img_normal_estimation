@@ -57,6 +57,15 @@ int main(int argc, char** argv)
 
     std::string camera_depth_topic;
     ros_throw_param_load(nodePtr, "camera_depth_topic", camera_depth_topic);
+    
+    std::string camera_normals_topic;
+    ros_throw_param_load(nodePtr, "camera_normals_topic", camera_normals_topic);
+
+    std::string camera_bgr_normals_topic;
+    ros_throw_param_load(nodePtr, "camera_bgr_normals_topic", camera_bgr_normals_topic);
+
+    std::string filtered_depth_topic;
+    ros_throw_param_load(nodePtr, "filtered_depth_topic", filtered_depth_topic);
 
     std::string config_path;
     ros_throw_param_load(nodePtr, "config_path", config_path);
@@ -65,7 +74,7 @@ int main(int argc, char** argv)
     ros_throw_param_load(nodePtr, "hardware", hardware);
 
     // Create NormalEstimator object
-    NormalEstimator normalEstimator(nodePtr, camera_depth_topic, config_path, hardware);
+    NormalEstimator normalEstimator(nodePtr, camera_depth_topic, camera_normals_topic, camera_bgr_normals_topic, filtered_depth_topic, config_path, hardware);
 
     // ros::spin();
     rclcpp::spin(nodePtr);
