@@ -23,7 +23,7 @@ Now you can build the `depth_img_normal_estimation` package.
 MAKEFLAGS="-j 4" colcon build --symlink-install --executor sequential --mixin rel-with-deb-info --packages-up-to depth_img_normal_estimation
 ```
 
-Building ocs2 can be quite computationally expensive, so `MAKEFLAGS="-j 4"` limits the number (4) of cores used during build, and `--executor sequential` makes sure packages are build sequentially, not in parallel. `--mixin rel-with-deb-info` builds the release version of the code, not the debugging version in order to get better performance, though this needs colcon mixin to be set up. Feel free to adjust these to your liking. I would also recommend that you export this alias into your bashrc so that you do not have to copy this in every time
+The parameter `MAKEFLAGS="-j 4"` limits the number (4) of cores used during build, and `--executor sequential` makes sure packages are built sequentially, not in parallel. The parameter `--mixin rel-with-deb-info` builds the release version of the code for better performance, though this needs colcon mixin to be set up. Feel free to adjust these to your liking. I would also recommend that you export this alias into your bashrc so that you do not have to copy this in every time:
 
 ```
 echo "alias buildros2='cd ~/ros2_ws && MAKEFLAGS="-j 4" colcon build --symlink-install --executor sequential --mixin rel-with-deb-info --packages-up-to'" >> ~/.bashrc  
@@ -36,3 +36,5 @@ Now, you can run the depth image surface normal estimation with
 ```
 ros2 launch depth_img_normal_estimation normal_estimation_sim.launch.py
 ```
+
+Depth images are expected to come in on the `/camera/depth/image_raw` topic, and 
