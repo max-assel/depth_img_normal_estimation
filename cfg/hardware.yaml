@@ -6,7 +6,7 @@ bilateral_filter:
   sigma_color: 75.0
   sigma_space: 75.0
   
-# Parameters for the depth in-filling filter. Applied on hardware  
+# Parameters for the depth in-filling filter. Applied on hardware only.
 infill_filter:
   kernel_size: 7
 

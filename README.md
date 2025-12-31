@@ -37,4 +37,4 @@ Now, you can run the depth image surface normal estimation with
 ros2 launch depth_img_normal_estimation normal_estimation_sim.launch.py
 ```
 
-Depth images are expected to come in on the `/camera/depth/image_raw` topic, and 
+Depth images are expected to come in on the `/camera/depth/image_raw` topic, and tunable parameters for image pre-processing can be found in the `cfg` folder.
