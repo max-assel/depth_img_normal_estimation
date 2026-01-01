@@ -1,5 +1,10 @@
 # Depth Image Gradients-based Surface Normal Estimation
 
+<p>
+    <img align="center" width="750" src="./assets/normals.png" alt="empty"> 
+</p>
+
+
 ## Introduction
 This is a C++/ROS2 implementation of a depth image gradients-based surface normal estimation algorithm. We implemented the ["Estimating Surface Normals with Depth Image Gradients for Fast and Accurate Registration"](https://ieeexplore.ieee.org/document/7335535) algorithm inside of a ROS2 node.
 
