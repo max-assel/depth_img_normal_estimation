@@ -262,9 +262,6 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     float dX_dy = 0.0, dY_dy = 0.0;
     Eigen::Vector3f v_x(0.0, 0.0, 0.0), v_y(0.0, 0.0, 0.0), n(0.0, 0.0, 0.0);
 
-    // int row_print = rows - 1;
-    // int col_print = cols / 2;
-
     // #pragma omp parallel for collapse(2) // parallelize the loop for better performance
     for (int r = 0; r < rows; r++)
     {
@@ -307,8 +304,6 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // Calculate normal
             n = v_y.cross(v_x); // I think it should be y cross x
 
-            // ROS_INFO("      raw normal: %f %f %f", n(0), n(1), n(2));
-
             // bool zero_depth = std::fabs(Z) < DELTA;
             // bool zero_normal = n.norm() < DELTA;
 
@@ -325,32 +320,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // Normalize normal
             n.normalize();
 
-            // if (r == row_print) //  && c == col_print
-            // {
-            //     ROS_INFO("      pixel: (%d, %d)", r, c);
-                
-            //     ROS_INFO("      Z: %f", Z);
-            //     ROS_INFO("      Z_r: %f", Z_r);
-            //     ROS_INFO("      Z_c: %f", Z_c);
-
-            //     ROS_INFO("      dZ_dx: %f", dZ_dx);
-            //     ROS_INFO("      dZ_dy: %f", dZ_dy);
-
-            //     ROS_INFO("      dX_dx: %f", dX_dx);
-            //     ROS_INFO("      dY_dx: %f", dY_dx);
-            //     ROS_INFO("      dX_dy: %f", dX_dy);
-            //     ROS_INFO("      dY_dy: %f", dY_dy);    
-
-            //     ROS_INFO("      v_x: %f %f %f", v_x(0), v_x(1), v_x(2));
-            //     ROS_INFO("      v_y: %f %f %f", v_y(0), v_y(1), v_y(2));
-
-            //     ROS_INFO("      normal: %f %f %f", n(0), n(1), n(2));
-            // }
-
             // Set normal
-            // normals->image.at<cv::Vec3b>(r, c)[2] = int(255 * std::abs(n(0))); // taking abs just to ensure RGB values are positive
-            // normals->image.at<cv::Vec3b>(r, c)[1] = int(255 * std::abs(n(1))); // taking abs just to ensure RGB values are positive
-            // normals->image.at<cv::Vec3b>(r, c)[0] = int(255 * std::abs(n(2))); // taking abs just to ensure RGB values are positive
             normals->image.at<cv::Vec3f>(r, c)[0] = n(0);
             normals->image.at<cv::Vec3f>(r, c)[1] = n(1);
             normals->image.at<cv::Vec3f>(r, c)[2] = n(2);
