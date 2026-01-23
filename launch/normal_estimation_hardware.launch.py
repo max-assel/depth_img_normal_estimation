@@ -1,0 +1,63 @@
+import os
+import sys
+
+import launch
+import launch_ros.actions
+from ament_index_python.packages import get_package_share_directory
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import Command, LaunchConfiguration, PythonExpression
+
+def generate_launch_description():
+    go2_interface_path = get_package_share_directory("go2_interface")
+
+    ld = launch.LaunchDescription([
+        launch_ros.actions.SetParameter(name='use_sim_time', value=False),
+        DeclareLaunchArgument(
+            "use_sim_time", default_value="false", description="Use simulation (Gazebo) clock if true"
+        ),        
+        launch_ros.actions.Node(
+            package='depth_img_normal_estimation',
+            executable='depth_img_normal_estimation_node',
+            name='depth_img_normal_estimation_node',
+            output='screen',
+            parameters=[
+                {
+                    'use_sim_time': LaunchConfiguration("use_sim_time")
+                },
+                {
+                    'camera_depth_topic': '/D435/depth/image_rect_raw'
+                },
+                {
+                    'camera_normals_topic': '/D435/normals'
+                },
+                {
+                    'config_path': get_package_share_directory('depth_img_normal_estimation') + '/cfg/hardware.yaml'
+                },
+                {
+                    'hardware': True
+                }
+            ]
+        ),
+        launch_ros.actions.Node(
+            package="rviz2",
+            executable="rviz2",
+            name="rviz2",
+            output="screen",
+            arguments=[
+                "-d",
+                os.path.join(
+                    go2_interface_path, "rviz", "go2_humble_rosbag.rviz",
+                )
+            ],
+            parameters=[
+                {
+                    "use_sim_time": LaunchConfiguration("use_sim_time"),
+                }
+            ]
+        )  
+    ])
+    return ld
+
+
+if __name__ == '__main__':
+    generate_launch_description()

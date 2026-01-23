@@ -4,6 +4,7 @@ float DELTA = std::numeric_limits<float>::epsilon();
 
 NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr, 
                                     const std::string & camera_depth_topic, 
+                                    const std::string & camera_normals_topic, 
                                     const std::string & config_path,
                                     const bool & hardware)
 {
@@ -15,9 +16,9 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
     depth_img_sub = it.subscribe(camera_depth_topic, 1, &NormalEstimator::depthImgCallback, this);
 
     // Initialize publishers
-    normals_pub = it.advertise("/camera/normals", 1);
-    normals_bgr_img_pub = it.advertise("/camera/color_normals", 1);
-    filtered_depth_pub = it.advertise("/camera/depth/filtered", 1);
+    normals_pub = it.advertise(camera_normals_topic, 1);
+    normals_bgr_img_pub = it.advertise(camera_normals_topic + "/colored", 1);
+    filtered_depth_pub = it.advertise(camera_depth_topic + "_filtered", 1);
 
     // Load configs
     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        config_path: " << config_path);
