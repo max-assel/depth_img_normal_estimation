@@ -21,14 +21,17 @@ struct PinholeCamera
 
     PinholeCamera()
     {
-        fx = 347.997;
-        fy = 347.997;
+        // K =  [fx, 0, u_0;]
+        //      [0, fy, v_0;]
+        //      [0, 0, 1]
+        fx = 194.46678161621094;
+        fy = 194.46678161621094;
         inv_fx = 1.0 / fx;
         inv_fy = 1.0 / fy;
-        width = 640;
-        height = 480;
-        u_0 = width / 2.0;
-        v_0 = height / 2.0;
+        width = 320;
+        height = 240;
+        u_0 = 161.86795043945312;
+        v_0 = 120.33906555175781;
         k1 = 0.0;
         k2 = 0.0;
         k3 = 0.0;

@@ -84,6 +84,7 @@ bool NormalEstimator::notReceivedDepthImage()
 void NormalEstimator::runNormalEstimation()
 {
     // std::lock_guard<std::mutex> lock(depth_img_mutex);
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::runNormalEstimation]");
 
     if (notReceivedDepthImage())
     {
@@ -97,8 +98,10 @@ void NormalEstimator::runNormalEstimation()
 
     // Read depth image
     cv::Mat depth_img = depth_img_ptr->image;
-    // int rows = depth_img.rows;
-    // int cols = depth_img.cols;
+    int rows = depth_img.rows;
+    int cols = depth_img.cols;
+
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth image size: " << rows << " x " << cols);
 
     // Pre-process depth image
     cv::Mat depth_img_preprocessed;
@@ -204,7 +207,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
     paddingBegin = std::chrono::steady_clock::now();
 
-    // pad depth image by 1 pixel so we can calculate normals for last row/col
+    // pad depth image (bottom row, right column) by 1 pixel so we can calculate normals for last row/col
     cv::copyMakeBorder(depth_img, depth_img_padded, 0, 1, 0, 1, cv::BORDER_CONSTANT, 0);
 
     float scale = 0.001; // 1000;
@@ -267,10 +270,10 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     {
         for (int c = 0; c < cols; c++)
         {
-            // ROS_INFO("      pixel: (%d, %d)", r, c);
-
             // Do something
             Z = depth_img_padded.at<float>(r, c) * scale;
+
+            RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << r << ", " << c << ") is: " << Z);
 
             if (std::fabs(Z) < DELTA)
             {
