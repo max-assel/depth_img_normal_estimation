@@ -101,30 +101,80 @@ void NormalEstimator::runNormalEstimation()
     int rows = depth_img.rows;
     int cols = depth_img.cols;
 
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth image size: " << rows << " x " << cols);
+    // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth image size: " << rows << " x " << cols);
+
+    // for (int r = 0; r < rows; r++)
+    // {
+    //     for (int c = 0; c < cols; c++)
+    //     {
+    //         float depth_value = depth_img.at<float>(r, c);
+
+    //         if (r < 25 || c < 25)
+    //         {
+    //             RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << r << ", " << c << ") is: " << depth_value);
+    //         }
+
+    //         if (std::isnan(depth_value) )
+    //         {
+    //             RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth image has NaN at pixel: (" << r << ", " << c << ")");
+    //         }
+
+    //         if (depth_value < 0.0)
+    //         {
+    //             RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth image has negative value at pixel: (" << r << ", " << c << "): " << depth_value);
+    //         }
+
+    //         if (std::isinf(depth_value))
+    //         {
+    //             RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth image has Inf at pixel: (" << r << ", " << c << ")");
+    //         }
+    //     }
+    // }
 
     // Pre-process depth image
     cv::Mat depth_img_preprocessed;
         
     if (hardware_)
     {
-        // bilateral filter
-        for (int i = 0; i < params.bilat_filter_num_iters; i++)
+        depth_img_preprocessed = depth_img.clone();
+        
+        // Replace first row 20 pixels with second row
+        for (int c = 0; c < 20; c++)
         {
-            cv::Mat temp_img; 
-            cv::bilateralFilter(depth_img, 
-                                temp_img, 
-                                params.bilat_filter_kernel_size, 
-                                params.bilat_filter_sigma_color, 
-                                params.bilat_filter_sigma_space);
-            depth_img = temp_img;
+            depth_img_preprocessed.at<float>(0, c) = 0;
         }
+
+        // // Fill in zeros 
+        // for (int r = 0; r < rows; r++)
+        // {
+        //     for (int c = 0; c < cols; c++)
+        //     {
+        //         float depth_value = depth_img.at<float>(r, c);
+
+        //         if (std::fabs(depth_value) < DELTA)
+        //         {
+        //             // take from the right
+        //         }
+        //     }
+        // }
 
 
         // shadow infill
-        cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
+        // cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
 
-        cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
+        // cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
+
+        // // bilateral filter
+        // for (int i = 0; i < params.bilat_filter_num_iters; i++)
+        // {
+        //     cv::Mat temp_img; 
+        //     cv::bilateralFilter(depth_img, 
+        //                         temp_img, 
+        //                         params.bilat_filter_kernel_size, 
+        //                         params.bilat_filter_sigma_color, 
+        //                         params.bilat_filter_sigma_space);
+        //     depth_img = temp_img;
+        // }
 
     } else
     {
@@ -273,7 +323,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // Do something
             Z = depth_img_padded.at<float>(r, c) * scale;
 
-            RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << r << ", " << c << ") is: " << Z);
+            // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << r << ", " << c << ") is: " << Z);
 
             if (std::fabs(Z) < DELTA)
             {
