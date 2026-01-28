@@ -137,11 +137,28 @@ void NormalEstimator::runNormalEstimation()
     if (hardware_)
     {
         depth_img_preprocessed = depth_img.clone();
-        
-        // Replace first row 20 pixels with second row
+
+        // Black out left 20 columns
         for (int c = 0; c < 20; c++)
         {
-            depth_img_preprocessed.at<float>(0, c) = 0;
+            // start from quarter way in, go to left border
+
+            for (int r = 0; r < rows; r++)
+            {
+                // depth_img_preprocessed.at<float>(r, c) = 0.0;
+                float depth_value = depth_img_preprocessed.at<float>(r, c);
+                float next_depth_value = depth_img_preprocessed.at<float>(r, c + 1);
+                // // float next_next_depth_value = depth_img_preprocessed.at<float>(r, c + 2);
+
+                if (std::fabs(depth_value) < DELTA ) // && std::fabs(next_depth_value) >= DELTA && std::fabs(next_next_depth_value) >= DELTA
+                {
+                    // take from the right
+
+                    // float delta = std::fabs(next_next_depth_value - next_depth_value);
+
+                    depth_img_preprocessed.at<float>(r, c) = next_depth_value; //  - delta;
+                }
+            }
         }
 
         // // Fill in zeros 
@@ -276,21 +293,24 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Padding ...");
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  rows: " << rows << ", cols: " << cols);
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  padded_rows: " << padded_rows << ", padded_cols: " << padded_cols);
+
+    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  Padding bottom row.");
+
     for (int c = 0; c < cols; c++)
     {
-        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      col: " << c);
+        RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      col: " << c);
         Z = depth_img.at<float>(rows - 2, c) * scale;
         Z_r = depth_img.at<float>(rows - 1, c) * scale;
 
-        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << rows - 2 << ", " << c << ") is: " << Z);
-        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << rows - 1 << ", " << c << ") is: " << Z_r);
+        RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 2 << ", " << c << ") is: " << depth_img.at<float>(rows - 2, c));
+        RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 1 << ", " << c << ") is: " << depth_img.at<float>(rows - 1, c));
 
         // Calculate depth gradient
         dZ_dy = (Z_r - Z);
 
         depth_img_padded.at<float>(rows, c) = (Z_r + dZ_dy) * inv_scale;
 
-        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
+        RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
 
     }
 
