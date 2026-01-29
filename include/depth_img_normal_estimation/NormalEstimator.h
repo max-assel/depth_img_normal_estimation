@@ -34,7 +34,7 @@ class NormalEstimator
 
         NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
                         const std::string & camera_depth_topic, 
-                        const std::string & camera_normals_topic, 
+                        const std::string & camera_normals_topic,
                         const std::string & config_path,
                         const bool & hardware);
 

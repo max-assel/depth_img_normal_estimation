@@ -1,0 +1,1 @@
+ros2 bag play rosbag2_2026_01_19-20_49_29_0.db3 --remap /superpixels/planar_region_normals:=/dummy1 /superpixels/elevation_map:=/dummy2 /superpixels/ids:=/dummy3 /superpixels/planar_regions:=/dummy4 /D435/normals:=/dummy5 /D435/normals/colored:=/dummy6

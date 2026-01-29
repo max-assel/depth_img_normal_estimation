@@ -3,8 +3,8 @@
 bilateral_filter:
   num_iters: 1
   kernel_size: 5
-  sigma_color: 75.0
-  sigma_space: 75.0
+  sigma_color: 150.0
+  sigma_space: 150.0
   
 # Parameters for the depth in-filling filter. Applied on hardware only.
 infill_filter:
@@ -12,4 +12,4 @@ infill_filter:
 
 # Max depth disparity between neighboring pixels to be considered for normal estimation.
 normal_estimation:
-  depth_threshold: 0.075
+  depth_threshold: 1.0

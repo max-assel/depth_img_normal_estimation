@@ -20,6 +20,11 @@ This package has been tested on Ubuntu 22.04 / ROS2 Humble.
     sudo apt-get install ros2-humble-perception ros2-humble-perception-pcl
     ```
 
+3. If you are playing on hardware, 
+Ubuntu 22.04
+librealsense -- v2.56.5
+realsense-ros -- 
+
 ## Building
 
 Now you can build the `depth_img_normal_estimation` package. 
