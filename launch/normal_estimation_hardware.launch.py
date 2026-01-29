@@ -12,7 +12,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
 
-    realsense2_camera_path = get_package_share_directory("realsense2_camera")
+    # realsense2_camera_path = get_package_share_directory("realsense2_camera")
 
     ld = launch.LaunchDescription([
         launch_ros.actions.SetParameter(name='use_sim_time', value=False),
@@ -41,34 +41,35 @@ def generate_launch_description():
                     'hardware': True
                 }
             ]
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(
-                    realsense2_camera_path, "launch", "rs_d435_launch.py",
-                )
-            ),
-            launch_arguments={
-                    'use_sim_time': LaunchConfiguration("use_sim_time")
-            }.items()
-        ),
-        launch_ros.actions.Node(
-            package="rviz2",
-            executable="rviz2",
-            name="rviz2",
-            output="screen",
-            # arguments=[
-            #     "-d",
-            #     os.path.join(
-            #         anymal_interface_path, "rviz", "anymal_mmp.rviz",
-            #     )
-            # ],
-            parameters=[
-                {
-                    'use_sim_time': LaunchConfiguration("use_sim_time")
-                }
-            ]
-        )        
+        )
+        # ,
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         os.path.join(
+        #             realsense2_camera_path, "launch", "rs_d435_launch.py",
+        #         )
+        #     ),
+        #     launch_arguments={
+        #             'use_sim_time': LaunchConfiguration("use_sim_time")
+        #     }.items()
+        # ),
+        # launch_ros.actions.Node(
+        #     package="rviz2",
+        #     executable="rviz2",
+        #     name="rviz2",
+        #     output="screen",
+        #     # arguments=[
+        #     #     "-d",
+        #     #     os.path.join(
+        #     #         anymal_interface_path, "rviz", "anymal_mmp.rviz",
+        #     #     )
+        #     # ],
+        #     parameters=[
+        #         {
+        #             'use_sim_time': LaunchConfiguration("use_sim_time")
+        #         }
+        #     ]
+        # )        
 
     ])
     return ld
