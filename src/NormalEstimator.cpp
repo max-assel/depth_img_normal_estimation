@@ -98,8 +98,8 @@ void NormalEstimator::runNormalEstimation()
 
     // Read depth image
     depth_img = depth_img_ptr->image;
-    // int rows = depth_img.rows;
-    // int cols = depth_img.cols;
+    int rows = depth_img.rows;
+    int cols = depth_img.cols;
 
     // // Pre-process depth image
     cv::Mat depth_img_preprocessed;
@@ -116,9 +116,17 @@ void NormalEstimator::runNormalEstimation()
                                 params.bilat_filter_sigma_color, 
                                 params.bilat_filter_sigma_space);
             depth_img = temp_img;
+            
         }
 
-        // zero out 
+        // zero out bottom five rows
+        for (int r = rows - 5; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                depth_img.at<float>(r, c) = 0.0;
+            }
+        }
 
         // // Fill in zeros 
         // for (int r = 0; r < rows; r++)
@@ -256,14 +264,6 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
         dZ_dy = (Z_r - Z);
 
         depth_img_padded.at<float>(rows, c) = (Z_r + dZ_dy) * inv_scale;
-
-        // zero bottom five rows
-        depth_img_padded.at<float>(rows - 4, c) = 0.0;
-        depth_img_padded.at<float>(rows - 3, c) = 0.0;
-        depth_img_padded.at<float>(rows - 2, c) = 0.0;
-        depth_img_padded.at<float>(rows - 1, c) = 0.0;
-        depth_img_padded.at<float>(rows, c) = 0.0;
-        
 
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
 
