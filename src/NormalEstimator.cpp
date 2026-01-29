@@ -33,7 +33,7 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
 
     hardware_ = hardware;
 
-    // filtered_depth_ptr.reset(new cv_bridge::CvImage);
+    filtered_depth_ptr.reset(new cv_bridge::CvImage);
     normals_ptr.reset(new cv_bridge::CvImage);
     normals_bgr_ptr.reset(new cv_bridge::CvImage);
 
@@ -84,7 +84,7 @@ bool NormalEstimator::notReceivedDepthImage()
 void NormalEstimator::runNormalEstimation()
 {
     // std::lock_guard<std::mutex> lock(depth_img_mutex);
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::runNormalEstimation]");
+    // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::runNormalEstimation]");
 
     if (notReceivedDepthImage())
     {
@@ -102,21 +102,23 @@ void NormalEstimator::runNormalEstimation()
     // int cols = depth_img.cols;
 
     // // Pre-process depth image
-    // cv::Mat depth_img_preprocessed;
+    cv::Mat depth_img_preprocessed;
         
-    // if (hardware_)
-    // {
-    //     // bilateral filter
-    //     for (int i = 0; i < params.bilat_filter_num_iters; i++)
-    //     {
-    //         cv::Mat temp_img; 
-    //         cv::bilateralFilter(depth_img, 
-    //                             temp_img, 
-    //                             params.bilat_filter_kernel_size, 
-    //                             params.bilat_filter_sigma_color, 
-    //                             params.bilat_filter_sigma_space);
-    //         depth_img = temp_img;
-    //     }
+    if (hardware_)
+    {
+        // bilateral filter
+        for (int i = 0; i < params.bilat_filter_num_iters; i++)
+        {
+            cv::Mat temp_img; 
+            cv::bilateralFilter(depth_img, 
+                                temp_img, 
+                                params.bilat_filter_kernel_size, 
+                                params.bilat_filter_sigma_color, 
+                                params.bilat_filter_sigma_space);
+            depth_img = temp_img;
+        }
+
+        // zero out 
 
         // // Fill in zeros 
         // for (int r = 0; r < rows; r++)
@@ -132,12 +134,13 @@ void NormalEstimator::runNormalEstimation()
         //     }
         // }
 
-    //     // shadow infill
-    //     cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
+        // // shadow infill
+        // cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
 
-    //     cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
-
-    // } else
+        // cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
+        depth_img_preprocessed = depth_img.clone();
+    } 
+    // else
     // {
     //     // depth_img_preprocessed = depth_img.clone();
     //     cv::bilateralFilter(depth_img, 
@@ -148,13 +151,13 @@ void NormalEstimator::runNormalEstimation()
     //                         cv::BORDER_REPLICATE);
     // }
 
-    // // Publish filtered depth image
-    // // cv_bridge::CvImagePtr filtered_depth_ptr(new cv_bridge::CvImage);
-    // filtered_depth_ptr->header = depth_img_ptr->header;
-    // filtered_depth_ptr->encoding = "32FC1";
-    // filtered_depth_ptr->image = depth_img_preprocessed;
+    // Publish filtered depth image
+    // cv_bridge::CvImagePtr filtered_depth_ptr(new cv_bridge::CvImage);
+    filtered_depth_ptr->header = depth_img_ptr->header;
+    filtered_depth_ptr->encoding = "32FC1";
+    filtered_depth_ptr->image = depth_img_preprocessed;
 
-    // filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
+    filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
 
     preprocessEnd = std::chrono::steady_clock::now();
     preprocessTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(preprocessEnd - preprocessBegin).count();
@@ -165,9 +168,9 @@ void NormalEstimator::runNormalEstimation()
     // cv_bridge::CvImagePtr normals_ptr(new cv_bridge::CvImage);
     normals_ptr->header = depth_img_ptr->header;                                
     normals_ptr->encoding = "32FC3";                                            
-    normals_ptr->image = cv::Mat(depth_img.rows, depth_img.cols, CV_32FC3, cv::Scalar(0.0, 0.0, 0.0));
+    normals_ptr->image = cv::Mat(depth_img_preprocessed.rows, depth_img_preprocessed.cols, CV_32FC3, cv::Scalar(0.0, 0.0, 0.0));
 
-    estimateNormals(depth_img, normals_ptr);
+    estimateNormals(depth_img_preprocessed, normals_ptr);
 
     // checkSparsity(depth_img, normals_ptr);
 
@@ -238,23 +241,31 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  rows: " << rows << ", cols: " << cols);
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  padded_rows: " << padded_rows << ", padded_cols: " << padded_cols);
 
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  Padding bottom row.");
+    // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  Padding bottom row.");
 
     for (int c = 0; c < cols; c++)
     {
-        RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      col: " << c);
+        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      col: " << c);
         Z = depth_img.at<float>(rows - 2, c) * scale;
         Z_r = depth_img.at<float>(rows - 1, c) * scale;
 
-        RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 2 << ", " << c << ") is: " << depth_img.at<float>(rows - 2, c));
-        RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 1 << ", " << c << ") is: " << depth_img.at<float>(rows - 1, c));
+        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 2 << ", " << c << ") is: " << depth_img.at<float>(rows - 2, c));
+        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 1 << ", " << c << ") is: " << depth_img.at<float>(rows - 1, c));
 
         // Calculate depth gradient
         dZ_dy = (Z_r - Z);
 
         depth_img_padded.at<float>(rows, c) = (Z_r + dZ_dy) * inv_scale;
 
-        RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
+        // zero bottom five rows
+        depth_img_padded.at<float>(rows - 4, c) = 0.0;
+        depth_img_padded.at<float>(rows - 3, c) = 0.0;
+        depth_img_padded.at<float>(rows - 2, c) = 0.0;
+        depth_img_padded.at<float>(rows - 1, c) = 0.0;
+        depth_img_padded.at<float>(rows, c) = 0.0;
+        
+
+        // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
 
     }
 
@@ -336,6 +347,20 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
             // Normalize normal
             n.normalize();
+
+
+            // if ( (r > (rows - 5)) && 
+            //         c == 160)
+            // {
+            //     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      pixel: (" << r << ", " << c << ")");
+            //     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      Z: " << Z);
+            //     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      Z_r: " << Z_r);
+            //     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      Z_c: " << Z_c);
+            //     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      v_x: " << v_x(0) << " " << v_x(1) << " " << v_x(2));
+            //     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      v_y: " << v_y(0) << " " << v_y(1) << " " << v_y(2));   
+            //     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      n: " << n(0) << " " << n(1) << " " << n(2));
+            // }
+
 
             // Set normal
             normals->image.at<cv::Vec3f>(r, c)[0] = n(0);

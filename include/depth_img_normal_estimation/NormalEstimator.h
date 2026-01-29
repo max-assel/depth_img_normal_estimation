@@ -59,7 +59,7 @@ class NormalEstimator
         image_transport::Subscriber depth_img_sub;
         image_transport::Publisher normals_pub; /**< estimated normals image publisher */
         image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
-        // image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
+        image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
 
         std::mutex depth_img_mutex;
         // ros::NodeHandle nodeHandle;
@@ -70,7 +70,7 @@ class NormalEstimator
         cv::Mat depth_img_padded;
 
         cv_bridge::CvImagePtr depth_img_ptr;
-        // cv_bridge::CvImagePtr filtered_depth_ptr;
+        cv_bridge::CvImagePtr filtered_depth_ptr;
         cv_bridge::CvImagePtr normals_ptr;
         cv_bridge::CvImagePtr normals_bgr_ptr;
 
