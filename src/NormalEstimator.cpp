@@ -37,24 +37,24 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
     normals_ptr.reset(new cv_bridge::CvImage);
     normals_bgr_ptr.reset(new cv_bridge::CvImage);
 
-    initTime = std::chrono::steady_clock::now();
+    // initTime = std::chrono::steady_clock::now();
 }
 
-void NormalEstimator::log()
-{
-    // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::~NormalEstimator]");
-    std::ofstream logFile;
-    logFile.open("/home/masselmeier3/Desktop/Research/quad_pips_experiments/timing/superpixels/normals/timing_log_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(initTime.time_since_epoch()).count()) + ".csv", std::ios::out);
+// void NormalEstimator::log()
+// {
+//     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::~NormalEstimator]");
+//     std::ofstream logFile;
+//     logFile.open("/home/masselmeier3/Desktop/Research/quad_pips_experiments/timing/superpixels/normals/timing_log_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(initTime.time_since_epoch()).count()) + ".csv", std::ios::out);
 
-    float averagePreprocessTime = preprocessTimeTaken * 1.0e-3 / static_cast<float>(numberOfPreprocessCalls);
-    float averagePaddingTime = paddingTimeTaken * 1.0e-3 / static_cast<float>(numberOfPaddingCalls);
-    float averageDepthGradientsTime = depthGradientsTimeTaken * 1.0e-3 / static_cast<float>(numberOfDepthGradientsCalls);
-    float averageTotalTime = totalTimeTaken * 1.0e-3 / static_cast<float>(numberOfTotalCalls);
+//     float averagePreprocessTime = preprocessTimeTaken * 1.0e-3 / static_cast<float>(numberOfPreprocessCalls);
+//     float averagePaddingTime = paddingTimeTaken * 1.0e-3 / static_cast<float>(numberOfPaddingCalls);
+//     float averageDepthGradientsTime = depthGradientsTimeTaken * 1.0e-3 / static_cast<float>(numberOfDepthGradientsCalls);
+//     float averageTotalTime = totalTimeTaken * 1.0e-3 / static_cast<float>(numberOfTotalCalls);
 
-    logFile << "avg preprocess time (ms), avg padding time (ms), avg depth gradients time (ms), avg total time (ms), number of calls" << std::endl;
-    logFile << averagePreprocessTime << ", " << averagePaddingTime << ", " << averageDepthGradientsTime << ", " << averageTotalTime << ", " << numberOfTotalCalls << std::endl;
-    logFile.close();
-}
+//     logFile << "avg preprocess time (ms), avg padding time (ms), avg depth gradients time (ms), avg total time (ms), number of calls" << std::endl;
+//     logFile << averagePreprocessTime << ", " << averagePaddingTime << ", " << averageDepthGradientsTime << ", " << averageTotalTime << ", " << numberOfTotalCalls << std::endl;
+//     logFile.close();
+// }
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& msg)
 {
@@ -92,9 +92,9 @@ void NormalEstimator::runNormalEstimation()
         return;
     }
 
-    totalBegin = std::chrono::steady_clock::now();
+    // totalBegin = std::chrono::steady_clock::now();
 
-    preprocessBegin = std::chrono::steady_clock::now();
+    // preprocessBegin = std::chrono::steady_clock::now();
 
     // Read depth image
     depth_img = depth_img_ptr->image;
@@ -120,13 +120,13 @@ void NormalEstimator::runNormalEstimation()
         }
 
         // zero out bottom five rows
-        for (int r = rows - 5; r < rows; r++)
-        {
-            for (int c = 0; c < cols; c++)
-            {
-                depth_img.at<float>(r, c) = 0.0;
-            }
-        }
+        // for (int r = rows - 5; r < rows; r++)
+        // {
+        //     for (int c = 0; c < cols; c++)
+        //     {
+        //         depth_img.at<float>(r, c) = 0.0;
+        //     }
+        // }
 
         // // Fill in zeros 
         // for (int r = 0; r < rows; r++)
@@ -167,9 +167,9 @@ void NormalEstimator::runNormalEstimation()
 
     filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
 
-    preprocessEnd = std::chrono::steady_clock::now();
-    preprocessTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(preprocessEnd - preprocessBegin).count();
-    numberOfPreprocessCalls++;
+    // preprocessEnd = std::chrono::steady_clock::now();
+    // preprocessTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(preprocessEnd - preprocessBegin).count();
+    // numberOfPreprocessCalls++;
 
     // Normals
     // set size as h x w x 3
@@ -208,9 +208,9 @@ void NormalEstimator::runNormalEstimation()
     // Display normals
     publishNormals(normals_ptr, normals_bgr_ptr);
 
-    totalEnd = std::chrono::steady_clock::now();
-    totalTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(totalEnd - totalBegin).count();
-    numberOfTotalCalls++;
+    // totalEnd = std::chrono::steady_clock::now();
+    // totalTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(totalEnd - totalBegin).count();
+    // numberOfTotalCalls++;
 
     // log();
 
@@ -227,7 +227,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 {
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::estimateNormals]");
 
-    paddingBegin = std::chrono::steady_clock::now();
+    // paddingBegin = std::chrono::steady_clock::now();
 
     // pad depth image (bottom row, right column) by 1 pixel so we can calculate normals for last row/col
     cv::copyMakeBorder(depth_img, depth_img_padded, 0, 1, 0, 1, cv::BORDER_CONSTANT, 0);
@@ -280,15 +280,15 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
         depth_img_padded.at<float>(r, cols) = (Z_c + dZ_dx) * inv_scale;
     }
 
-    paddingEnd = std::chrono::steady_clock::now();
-    paddingTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(paddingEnd - paddingBegin).count();
-    numberOfPaddingCalls++;
+    // paddingEnd = std::chrono::steady_clock::now();
+    // paddingTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(paddingEnd - paddingBegin).count();
+    // numberOfPaddingCalls++;
 
 
-    depthGradientsBegin = std::chrono::steady_clock::now();
+    // depthGradientsBegin = std::chrono::steady_clock::now();
     float dX_dx = 0.0, dY_dx = 0.0;
     float dX_dy = 0.0, dY_dy = 0.0;
-    Eigen::Vector3f v_x(0.0, 0.0, 0.0), v_y(0.0, 0.0, 0.0), n(0.0, 0.0, 0.0);
+    cv::Vec3f v_x(0.0, 0.0, 0.0), v_y(0.0, 0.0, 0.0), n(0.0, 0.0, 0.0);
 
     // #pragma omp parallel for collapse(2) // parallelize the loop for better performance
     for (int r = 0; r < rows; r++)
@@ -326,11 +326,11 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             dY_dy = (Z * camera.inv_fy) + dZ_dy * (r - camera.v_0) * camera.inv_fy;
 
             // Calculate direcitonal derivatives
-            v_x << dX_dx, dY_dx, dZ_dx;
-            v_y << dX_dy, dY_dy, dZ_dy;
+            v_x = cv::Vec3f(dX_dx, dY_dx, dZ_dx);
+            v_y = cv::Vec3f(dX_dy, dY_dy, dZ_dy);
 
             // Calculate normal
-            n = v_y.cross(v_x); // I think it should be y cross x
+            n = v_y.cross(v_x);
 
             // bool zero_depth = std::fabs(Z) < DELTA;
             // bool zero_normal = n.norm() < DELTA;
@@ -346,7 +346,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // }
 
             // Normalize normal
-            n.normalize();
+            n = n / cv::norm(n);
 
 
             // if ( (r > (rows - 5)) && 
@@ -369,9 +369,9 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
         }
     }
 
-    depthGradientsEnd = std::chrono::steady_clock::now();
-    depthGradientsTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(depthGradientsEnd - depthGradientsBegin).count();
-    numberOfDepthGradientsCalls++;
+    // depthGradientsEnd = std::chrono::steady_clock::now();
+    // depthGradientsTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(depthGradientsEnd - depthGradientsBegin).count();
+    // numberOfDepthGradientsCalls++;
 
     // // Check last row and last col
     // for (int c = 0; c < cols; c++)
@@ -421,80 +421,80 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     return;
 }
 
-void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals_ptr)
-{
-    int rows = depth_img.rows;
-    int cols = depth_img.cols;
+// void NormalEstimator::checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals_ptr)
+// {
+//     int rows = depth_img.rows;
+//     int cols = depth_img.cols;
 
-    int nan_depth_count = 0;
-    int nan_normal_count = 0;
+//     int nan_depth_count = 0;
+//     int nan_normal_count = 0;
 
-    int finite_depth_count = 0;
-    int finite_normal_count = 0;
+//     int finite_depth_count = 0;
+//     int finite_normal_count = 0;
 
-    int zero_depth_count = 0;
-    int zero_normal_count = 0;
+//     int zero_depth_count = 0;
+//     int zero_normal_count = 0;
 
-    int depth_flag = -1;
-    int normal_flag = -1;
+//     int depth_flag = -1;
+//     int normal_flag = -1;
 
-    for (int r = 0; r < rows; r++)
-    {
-        for (int c = 0; c < cols; c++)
-        {
-            depth_flag = -1;
-            normal_flag = -1; 
+//     for (int r = 0; r < rows; r++)
+//     {
+//         for (int c = 0; c < cols; c++)
+//         {
+//             depth_flag = -1;
+//             normal_flag = -1; 
 
-            if (depth_img.at<float>(r, c) != depth_img.at<float>(r, c))
-            {
-                // RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth image has NaN value at row: " << r << ", col: " << c);
-                nan_depth_count++;
-                depth_flag = 0;
-            } else if (std::fabs(depth_img.at<float>(r, c)) < DELTA)
-            {
-                zero_depth_count++;
-                depth_flag = 1;
-            } else
-            {
-                // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image value at row: " << r << ", col: " << c << " is: " << depth_img.at<float>(r, c));
-                finite_depth_count++;
-                depth_flag = 2;
-            }
+//             if (depth_img.at<float>(r, c) != depth_img.at<float>(r, c))
+//             {
+//                 // RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth image has NaN value at row: " << r << ", col: " << c);
+//                 nan_depth_count++;
+//                 depth_flag = 0;
+//             } else if (std::fabs(depth_img.at<float>(r, c)) < DELTA)
+//             {
+//                 zero_depth_count++;
+//                 depth_flag = 1;
+//             } else
+//             {
+//                 // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image value at row: " << r << ", col: " << c << " is: " << depth_img.at<float>(r, c));
+//                 finite_depth_count++;
+//                 depth_flag = 2;
+//             }
 
-            if (normals_ptr->image.at<cv::Vec3f>(r, c)[0] != normals_ptr->image.at<cv::Vec3f>(r, c)[0] ||
-                normals_ptr->image.at<cv::Vec3f>(r, c)[1] != normals_ptr->image.at<cv::Vec3f>(r, c)[1] ||
-                normals_ptr->image.at<cv::Vec3f>(r, c)[2] != normals_ptr->image.at<cv::Vec3f>(r, c)[2])
-            {
-                // RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Normal image has NaN value at row: " << r << ", col: " << c);
-                nan_normal_count++;
-                normal_flag = 0;
-            } else if (  cv::norm(normals_ptr->image.at<cv::Vec3f>(r, c)) < DELTA)
-            {
-                zero_normal_count++;
-                normal_flag = 1;
-            } else
-            {
-                // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image value at row: " << r << ", col: " << c << " is: " << normals_ptr->image.at<cv::Vec3f>(r, c));
-                finite_normal_count++;
-                normal_flag = 2;
-            }
+//             if (normals_ptr->image.at<cv::Vec3f>(r, c)[0] != normals_ptr->image.at<cv::Vec3f>(r, c)[0] ||
+//                 normals_ptr->image.at<cv::Vec3f>(r, c)[1] != normals_ptr->image.at<cv::Vec3f>(r, c)[1] ||
+//                 normals_ptr->image.at<cv::Vec3f>(r, c)[2] != normals_ptr->image.at<cv::Vec3f>(r, c)[2])
+//             {
+//                 // RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Normal image has NaN value at row: " << r << ", col: " << c);
+//                 nan_normal_count++;
+//                 normal_flag = 0;
+//             } else if (  cv::norm(normals_ptr->image.at<cv::Vec3f>(r, c)) < DELTA)
+//             {
+//                 zero_normal_count++;
+//                 normal_flag = 1;
+//             } else
+//             {
+//                 // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image value at row: " << r << ", col: " << c << " is: " << normals_ptr->image.at<cv::Vec3f>(r, c));
+//                 finite_normal_count++;
+//                 normal_flag = 2;
+//             }
 
-            if (depth_flag != normal_flag)
-            {
-                RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth and normal image values do not match at row: " << r << ", col: " << c);
-                RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth flag: " << depth_flag << ", Normal flag: " << normal_flag);
-            }
-        }
-    }
+//             if (depth_flag != normal_flag)
+//             {
+//                 RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth and normal image values do not match at row: " << r << ", col: " << c);
+//                 RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "Depth flag: " << depth_flag << ", Normal flag: " << normal_flag);
+//             }
+//         }
+//     }
 
 
-    // int total_pixels = rows * cols;
+//     // int total_pixels = rows * cols;
 
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image NaN count: " << nan_depth_count);
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image zero count: " << zero_depth_count);
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image finite count: " << finite_depth_count);
+//     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image NaN count: " << nan_depth_count);
+//     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image zero count: " << zero_depth_count);
+//     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Depth image finite count: " << finite_depth_count);
 
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image NaN count: " << nan_normal_count);
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image zero count: " << zero_normal_count);
-    RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image finite count: " << finite_normal_count);
-}
+//     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image NaN count: " << nan_normal_count);
+//     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image zero count: " << zero_normal_count);
+//     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "Normal image finite count: " << finite_normal_count);
+// }

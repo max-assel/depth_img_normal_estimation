@@ -1,21 +1,19 @@
 #pragma once
 
-#include <chrono>
-#include <fstream>
-#include <string>
+// #include <chrono>
+// #include <fstream>
+// #include <string>
 
-// #include <ros/ros.h>
 #include "rclcpp/rclcpp.hpp"
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+// #include <Eigen/Core>
+// #include <Eigen/Geometry>
 
-// #include <sensor_msgs/Image.h>
 #include <sensor_msgs/msg/image.hpp>
 
 // Include opencv2
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+// #include <opencv2/imgproc/imgproc.hpp>
+// #include <opencv2/highgui/highgui.hpp>
 
 // Include CvBridge, Image Transport, Image msg
 #include <image_transport/image_transport.hpp>
@@ -24,7 +22,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <mutex>
+// #include <mutex>
 
 #include <depth_img_normal_estimation/PinholeCamera.h>
 
@@ -44,9 +42,9 @@ class NormalEstimator
 
     private:
 
-        void log();
+        // void log();
 
-        void checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals_ptr);
+        // void checkSparsity(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals_ptr);
 
         void depthImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& msg);
 
@@ -57,16 +55,16 @@ class NormalEstimator
         bool notReceivedDepthImage();
 
         image_transport::Subscriber depth_img_sub;
+
         image_transport::Publisher normals_pub; /**< estimated normals image publisher */
         image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
         image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
 
-        std::mutex depth_img_mutex;
+        // std::mutex depth_img_mutex;
         // ros::NodeHandle nodeHandle;
         rclcpp::Node::SharedPtr nodePtr_;
 
         cv::Mat depth_img;
-
         cv::Mat depth_img_padded;
 
         cv_bridge::CvImagePtr depth_img_ptr;
@@ -80,27 +78,27 @@ class NormalEstimator
 
         PinholeCamera camera;
 
-        std::chrono::steady_clock::time_point initTime;
+        // std::chrono::steady_clock::time_point initTime;
 
-        std::chrono::steady_clock::time_point totalBegin;
-        std::chrono::steady_clock::time_point totalEnd;
-        float totalTimeTaken = 0.0f;
-        int numberOfTotalCalls = 0;
+        // std::chrono::steady_clock::time_point totalBegin;
+        // std::chrono::steady_clock::time_point totalEnd;
+        // float totalTimeTaken = 0.0f;
+        // int numberOfTotalCalls = 0;
 
-        std::chrono::steady_clock::time_point preprocessBegin;
-        std::chrono::steady_clock::time_point preprocessEnd;
-        float preprocessTimeTaken = 0.0f;
-        int numberOfPreprocessCalls = 0;
+        // std::chrono::steady_clock::time_point preprocessBegin;
+        // std::chrono::steady_clock::time_point preprocessEnd;
+        // float preprocessTimeTaken = 0.0f;
+        // int numberOfPreprocessCalls = 0;
 
-        std::chrono::steady_clock::time_point paddingBegin;
-        std::chrono::steady_clock::time_point paddingEnd;
-        float paddingTimeTaken = 0.0f;
-        int numberOfPaddingCalls = 0;
+        // std::chrono::steady_clock::time_point paddingBegin;
+        // std::chrono::steady_clock::time_point paddingEnd;
+        // float paddingTimeTaken = 0.0f;
+        // int numberOfPaddingCalls = 0;
 
-        std::chrono::steady_clock::time_point depthGradientsBegin;
-        std::chrono::steady_clock::time_point depthGradientsEnd;
-        float depthGradientsTimeTaken = 0.0f;
-        int numberOfDepthGradientsCalls = 0;
+        // std::chrono::steady_clock::time_point depthGradientsBegin;
+        // std::chrono::steady_clock::time_point depthGradientsEnd;
+        // float depthGradientsTimeTaken = 0.0f;
+        // int numberOfDepthGradientsCalls = 0;
 
         struct NormalEstimationParams
         {
