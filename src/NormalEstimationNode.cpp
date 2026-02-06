@@ -22,5 +22,15 @@ int main(int argc, char** argv)
     // Create NormalEstimator object
     NormalEstimator normalEstimator(nodePtr, camera_depth_topic, camera_normals_topic, config_path, hardware);
 
-    rclcpp::spin(nodePtr);
+    // rclcpp::spin(nodePtr);
+
+    while (rclcpp::ok())
+    {
+        normalEstimator.runNormalEstimation();
+
+        loop_rate.sleep();
+
+        rclcpp::spin_some(nodePtr);
+    }
+
 }

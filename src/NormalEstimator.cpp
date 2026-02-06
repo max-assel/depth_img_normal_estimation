@@ -58,7 +58,7 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& msg)
 {
-    // std::lock_guard<std::mutex> lock(depth_img_mutex);
+    std::lock_guard<std::mutex> lock(depth_img_mutex);
 
     // ROS_INFO("[NormalEstimator::depthImgCallback]");
 
@@ -72,7 +72,7 @@ void NormalEstimator::depthImgCallback(const sensor_msgs::msg::Image::ConstShare
     //     return;
     // }       
 
-    runNormalEstimation();
+    // runNormalEstimation();
 
 }
 
@@ -83,7 +83,7 @@ bool NormalEstimator::notReceivedDepthImage()
 
 void NormalEstimator::runNormalEstimation()
 {
-    // std::lock_guard<std::mutex> lock(depth_img_mutex);
+    std::lock_guard<std::mutex> lock(depth_img_mutex);
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::runNormalEstimation]");
 
     if (notReceivedDepthImage())
@@ -102,51 +102,53 @@ void NormalEstimator::runNormalEstimation()
     // int cols = depth_img.cols;
 
     // // Pre-process depth image
-        
-    if (hardware_)
-    {
-        // bilateral filter
-        for (int i = 0; i < params.bilat_filter_num_iters; i++)
-        {
-            cv::Mat temp_img; 
-            cv::bilateralFilter(depth_img, 
-                                temp_img, 
-                                params.bilat_filter_kernel_size, 
-                                params.bilat_filter_sigma_color, 
-                                params.bilat_filter_sigma_space);
-            depth_img = temp_img;
+   
+    depth_img_preprocessed = depth_img.clone();
+
+    // if (hardware_)
+    // {
+    //     // bilateral filter
+    //     for (int i = 0; i < params.bilat_filter_num_iters; i++)
+    //     {
+    //         cv::Mat temp_img; 
+    //         cv::bilateralFilter(depth_img, 
+    //                             temp_img, 
+    //                             params.bilat_filter_kernel_size, 
+    //                             params.bilat_filter_sigma_color, 
+    //                             params.bilat_filter_sigma_space);
+    //         depth_img = temp_img;
             
-        }
+    //     }
 
-        // zero out bottom five rows
-        // for (int r = rows - 5; r < rows; r++)
-        // {
-        //     for (int c = 0; c < cols; c++)
-        //     {
-        //         depth_img.at<float>(r, c) = 0.0;
-        //     }
-        // }
+    //     // zero out bottom five rows
+    //     // for (int r = rows - 5; r < rows; r++)
+    //     // {
+    //     //     for (int c = 0; c < cols; c++)
+    //     //     {
+    //     //         depth_img.at<float>(r, c) = 0.0;
+    //     //     }
+    //     // }
 
-        // // Fill in zeros 
-        // for (int r = 0; r < rows; r++)
-        // {
-        //     for (int c = 0; c < cols; c++)
-        //     {
-        //         float depth_value = depth_img.at<float>(r, c);
+    //     // // Fill in zeros 
+    //     // for (int r = 0; r < rows; r++)
+    //     // {
+    //     //     for (int c = 0; c < cols; c++)
+    //     //     {
+    //     //         float depth_value = depth_img.at<float>(r, c);
 
-        //         if (std::fabs(depth_value) < DELTA)
-        //         {
-        //             // take from the right
-        //         }
-        //     }
-        // }
+    //     //         if (std::fabs(depth_value) < DELTA)
+    //     //         {
+    //     //             // take from the right
+    //     //         }
+    //     //     }
+    //     // }
 
-        // // shadow infill
-        // cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
+    //     // // shadow infill
+    //     // cv::Mat shadow_infill_kernel = cv::Mat::ones(params.infill_filter_kernel_size, params.infill_filter_kernel_size, CV_32F);
 
-        // cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
-        depth_img_preprocessed = depth_img.clone();
-    } 
+    //     // cv::dilate(depth_img, depth_img_preprocessed, shadow_infill_kernel);
+    //     depth_img_preprocessed = depth_img.clone();
+    // } 
     // else
     // {
     //     // depth_img_preprocessed = depth_img.clone();
