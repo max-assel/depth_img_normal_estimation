@@ -5,19 +5,19 @@
 
 struct PinholeCamera
 {
-    double fx; // focal length x
-    double fy; // focal length y
-    double inv_fx; // 1 / focal length x (for efficiency)
-    double inv_fy; // 1 / focal length y (for efficiency)
-    double u_0; // optical center x
-    double v_0; // optical center y
-    // double k1; // radial distortion coefficient
-    // double k2; // radial distortion coefficient
-    // double k3; // radial distortion coefficient
-    // double p1; // tangential distortion coefficient
-    // double p2; // tangential distortion coefficient
-    int width; // image width (in pixels)
-    int height; // image height (in pixels)
+    float fx; // focal length x
+    float fy; // focal length y
+    float inv_fx; // 1 / focal length x (for efficiency)
+    float inv_fy; // 1 / focal length y (for efficiency)
+    float u_0; // optical center x
+    float v_0; // optical center y
+    // float k1; // radial distortion coefficient
+    // float k2; // radial distortion coefficient
+    // float k3; // radial distortion coefficient
+    // float p1; // tangential distortion coefficient
+    // float p2; // tangential distortion coefficient
+    int16_t width; // image width (in pixels)
+    int16_t height; // image height (in pixels)
 
     PinholeCamera()
     {
@@ -39,10 +39,10 @@ struct PinholeCamera
         // p2 = 0.0;
     }
 
-    PinholeCamera(double fx, double fy, 
-                    double u_0, double v_0, 
-                    // double k1, double k2, double k3, double p1, double p2,
-                    double width, double height)
+    PinholeCamera(float fx, float fy, 
+                    float u_0, float v_0, 
+                    // float k1, float k2, float k3, float p1, float p2,
+                    float width, float height)
     {
         this->fx = fx;
         this->fy = fy;

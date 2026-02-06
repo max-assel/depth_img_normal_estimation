@@ -22,7 +22,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <mutex>
+// #include <mutex>
 
 #include <depth_img_normal_estimation/PinholeCamera.h>
 
@@ -61,7 +61,7 @@ class NormalEstimator
         // image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
         // image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
 
-        std::mutex depth_img_mutex;
+        // std::mutex depth_img_mutex;
         // ros::NodeHandle nodeHandle;
         rclcpp::Node::SharedPtr nodePtr_;
 
@@ -90,8 +90,8 @@ class NormalEstimator
         cv::Vec3f n; // (0.0, 0.0, 0.0); 
         // cv::Vec3f nhat(0.0, 0.0, 0.0);
 
-        int rows_ = 0;
-        int cols_ = 0;
+        int16_t rows_ = 0;
+        int16_t cols_ = 0;
         float Z = 0.0;
         float Z_r = 0.0;
         float Z_c = 0.0;

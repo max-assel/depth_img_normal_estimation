@@ -58,7 +58,7 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
 
 void NormalEstimator::depthImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& msg)
 {
-    std::lock_guard<std::mutex> lock(depth_img_mutex);
+    // std::lock_guard<std::mutex> lock(depth_img_mutex);
 
     // ROS_INFO("[NormalEstimator::depthImgCallback]");
 
@@ -83,7 +83,7 @@ bool NormalEstimator::notReceivedDepthImage()
 
 void NormalEstimator::runNormalEstimation()
 {
-    std::lock_guard<std::mutex> lock(depth_img_mutex);
+    // std::lock_guard<std::mutex> lock(depth_img_mutex);
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::runNormalEstimation]");
 
     if (notReceivedDepthImage())
@@ -252,7 +252,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  Padding bottom row.");
 
-    for (int c = 0; c < cols_; c++)
+    for (int16_t c = 0; c < cols_; c++)
     {
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      col: " << c);
         Z = depth_img.at<float>(rows_ - 2, c) * scale_;
@@ -270,7 +270,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
     }
 
-    for (int r = 0; r < rows_; r++)
+    for (int16_t r = 0; r < rows_; r++)
     {
         Z = depth_img.at<float>(r, cols_ - 2) * scale_;
         Z_c = depth_img.at<float>(r, cols_ - 1) * scale_;
@@ -289,9 +289,9 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     // depthGradientsBegin = std::chrono::steady_clock::now();
 
     // #pragma omp parallel for collapse(2) // parallelize the loop for better performance
-    for (int r = 0; r < rows_; r++)
+    for (int16_t r = 0; r < rows_; r++)
     {
-        for (int c = 0; c < cols_; c++)
+        for (int16_t c = 0; c < cols_; c++)
         {
             // Do something
             Z = depth_img_padded.at<float>(r, c) * scale_;
