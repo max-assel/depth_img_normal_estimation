@@ -17,8 +17,8 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
 
     // Initialize publishers
     normals_pub = it.advertise(camera_normals_topic, 1);
-    normals_bgr_img_pub = it.advertise(camera_normals_topic + "/colored", 1);
-    filtered_depth_pub = it.advertise(camera_depth_topic + "_filtered", 1);
+    // normals_bgr_img_pub = it.advertise(camera_normals_topic + "/colored", 1);
+    // filtered_depth_pub = it.advertise(camera_depth_topic + "_filtered", 1);
 
     // Load configs
     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        config_path: " << config_path);
@@ -35,7 +35,7 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
 
     filtered_depth_ptr.reset(new cv_bridge::CvImage);
     normals_ptr.reset(new cv_bridge::CvImage);
-    normals_bgr_ptr.reset(new cv_bridge::CvImage);
+    // normals_bgr_ptr.reset(new cv_bridge::CvImage);
 
     // initTime = std::chrono::steady_clock::now();
 }
@@ -62,15 +62,15 @@ void NormalEstimator::depthImgCallback(const sensor_msgs::msg::Image::ConstShare
 
     // ROS_INFO("[NormalEstimator::depthImgCallback]");
 
-    try
-    {
+    // try
+    // {
         depth_img_ptr = cv_bridge::toCvCopy(msg, "32FC1");
         // ROS_INFO("      received new depth image");
-    } catch (std::exception& e)
-    {
-        RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "       depthImgCallback failed: " << e.what());
-        return;
-    }       
+    // } catch (std::exception& e)
+    // {
+    //     RCLCPP_ERROR_STREAM(nodePtr_->get_logger(), "       depthImgCallback failed: " << e.what());
+    //     return;
+    // }       
 
     runNormalEstimation();
 
@@ -98,8 +98,8 @@ void NormalEstimator::runNormalEstimation()
 
     // Read depth image
     depth_img = depth_img_ptr->image;
-    int rows = depth_img.rows;
-    int cols = depth_img.cols;
+    // int rows = depth_img.rows;
+    // int cols = depth_img.cols;
 
     // // Pre-process depth image
     cv::Mat depth_img_preprocessed;
@@ -161,11 +161,11 @@ void NormalEstimator::runNormalEstimation()
 
     // Publish filtered depth image
     // cv_bridge::CvImagePtr filtered_depth_ptr(new cv_bridge::CvImage);
-    filtered_depth_ptr->header = depth_img_ptr->header;
-    filtered_depth_ptr->encoding = "32FC1";
-    filtered_depth_ptr->image = depth_img_preprocessed;
+    // filtered_depth_ptr->header = depth_img_ptr->header;
+    // filtered_depth_ptr->encoding = "32FC1";
+    // filtered_depth_ptr->image = depth_img_preprocessed;
 
-    filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
+    // filtered_depth_pub.publish(filtered_depth_ptr->toImageMsg());
 
     // preprocessEnd = std::chrono::steady_clock::now();
     // preprocessTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(preprocessEnd - preprocessBegin).count();
@@ -190,23 +190,23 @@ void NormalEstimator::runNormalEstimation()
     //                                                             normals_ptr->image.at<cv::Vec3f>(r, c)[2]);
 
     // cv_bridge::CvImagePtr normals_bgr_ptr(new cv_bridge::CvImage);
-    normals_bgr_ptr->header = depth_img_ptr->header;                                
-    normals_bgr_ptr->encoding = "rgb8";                                            
-    normals_bgr_ptr->image = normals_ptr->image.clone();
+    // normals_bgr_ptr->header = depth_img_ptr->header;                                
+    // normals_bgr_ptr->encoding = "rgb8";                                            
+    // normals_bgr_ptr->image = normals_ptr->image.clone();
 
-    // Convert from float to 8UC3
-    // First, take abs value of normals
-    normals_bgr_ptr->image = cv::abs(normals_bgr_ptr->image);
+    // // Convert from float to 8UC3
+    // // First, take abs value of normals
+    // normals_bgr_ptr->image = cv::abs(normals_bgr_ptr->image);
 
-    // Then, convert to 8UC3
-    normals_bgr_ptr->image.convertTo(normals_bgr_ptr->image, CV_8UC3, 255.0);
+    // // Then, convert to 8UC3
+    // normals_bgr_ptr->image.convertTo(normals_bgr_ptr->image, CV_8UC3, 255.0);
 
     // ROS_INFO("      middle colored normal: %d %d %d", normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[0], 
     //                                                     normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[1], 
     //                                                     normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[2]);
 
     // Display normals
-    publishNormals(normals_ptr, normals_bgr_ptr);
+    publishNormals(normals_ptr); // , normals_bgr_ptr
 
     // totalEnd = std::chrono::steady_clock::now();
     // totalTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(totalEnd - totalBegin).count();
@@ -217,10 +217,11 @@ void NormalEstimator::runNormalEstimation()
     return;
 }
 
-void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals, const cv_bridge::CvImagePtr& normals_bgr)
+// , const cv_bridge::CvImagePtr& normals_bgr
+void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals)
 {
     normals_pub.publish(normals->toImageMsg());
-    normals_bgr_img_pub.publish(normals_bgr->toImageMsg());
+    // normals_bgr_img_pub.publish(normals_bgr->toImageMsg());
 }
 
 void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals)
@@ -232,8 +233,8 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     // pad depth image (bottom row, right column) by 1 pixel so we can calculate normals for last row/col
     cv::copyMakeBorder(depth_img, depth_img_padded, 0, 1, 0, 1, cv::BORDER_CONSTANT, 0);
 
-    float scale = 0.001; // 1000;
-    float inv_scale = 1.0 / scale;
+    // float scale = 0.001; // 1000;
+    // float inv_scale = 1.0 / scale;
 
     // Normal estimation code
 
@@ -254,8 +255,8 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     for (int c = 0; c < cols; c++)
     {
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      col: " << c);
-        Z = depth_img.at<float>(rows - 2, c) * scale;
-        Z_r = depth_img.at<float>(rows - 1, c) * scale;
+        Z = depth_img.at<float>(rows - 2, c) * scale_;
+        Z_r = depth_img.at<float>(rows - 1, c) * scale_;
 
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 2 << ", " << c << ") is: " << depth_img.at<float>(rows - 2, c));
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 1 << ", " << c << ") is: " << depth_img.at<float>(rows - 1, c));
@@ -263,7 +264,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
         // Calculate depth gradient
         dZ_dy = (Z_r - Z);
 
-        depth_img_padded.at<float>(rows, c) = (Z_r + dZ_dy) * inv_scale;
+        depth_img_padded.at<float>(rows, c) = (Z_r + dZ_dy) * invScale_;
 
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
 
@@ -271,13 +272,13 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
     for (int r = 0; r < rows; r++)
     {
-        Z = depth_img.at<float>(r, cols - 2) * scale;
-        Z_c = depth_img.at<float>(r, cols - 1) * scale;
+        Z = depth_img.at<float>(r, cols - 2) * scale_;
+        Z_c = depth_img.at<float>(r, cols - 1) * scale_;
 
         // Calculate depth gradient
         dZ_dx = (Z_c - Z);
 
-        depth_img_padded.at<float>(r, cols) = (Z_c + dZ_dx) * inv_scale;
+        depth_img_padded.at<float>(r, cols) = (Z_c + dZ_dx) * invScale_;
     }
 
     // paddingEnd = std::chrono::steady_clock::now();
@@ -286,9 +287,6 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
 
     // depthGradientsBegin = std::chrono::steady_clock::now();
-    float dX_dx = 0.0, dY_dx = 0.0;
-    float dX_dy = 0.0, dY_dy = 0.0;
-    cv::Vec3f v_x(0.0, 0.0, 0.0), v_y(0.0, 0.0, 0.0), n(0.0, 0.0, 0.0);
 
     // #pragma omp parallel for collapse(2) // parallelize the loop for better performance
     for (int r = 0; r < rows; r++)
@@ -296,7 +294,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
         for (int c = 0; c < cols; c++)
         {
             // Do something
-            Z = depth_img_padded.at<float>(r, c) * scale;
+            Z = depth_img_padded.at<float>(r, c) * scale_;
 
             // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      depth at pixel: (" << r << ", " << c << ") is: " << Z);
 
@@ -306,8 +304,8 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
                 continue;
             }
 
-            Z_r = depth_img_padded.at<float>(r + 1, c) * scale;
-            Z_c = depth_img_padded.at<float>(r, c + 1) * scale;
+            Z_r = depth_img_padded.at<float>(r + 1, c) * scale_;
+            Z_c = depth_img_padded.at<float>(r, c + 1) * scale_;
 
             // Calculate depth gradient
             dZ_dx = (Z_c - Z);
@@ -326,8 +324,10 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             dY_dy = (Z * camera.inv_fy) + dZ_dy * (r - camera.v_0) * camera.inv_fy;
 
             // Calculate direcitonal derivatives
-            v_x = cv::Vec3f(dX_dx, dY_dx, dZ_dx);
-            v_y = cv::Vec3f(dX_dy, dY_dy, dZ_dy);
+            // v_x = cv::Vec3f(dX_dx, dY_dx, dZ_dx);
+            // v_y = cv::Vec3f(dX_dy, dY_dy, dZ_dy);
+            v_x[0] = dX_dx; v_x[1] = dY_dx; v_x[2] = dZ_dx;
+            v_y[0] = dX_dy; v_y[1] = dY_dy; v_y[2] = dZ_dy;
 
             // Calculate normal
             n = v_y.cross(v_x);
@@ -348,6 +348,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // Normalize normal
             n = n / cv::norm(n);
 
+            // cv::normalize(n, nhat);
 
             // if ( (r > (rows - 5)) && 
             //         c == 160)
@@ -361,11 +362,11 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             //     RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      n: " << n(0) << " " << n(1) << " " << n(2));
             // }
 
-
             // Set normal
-            normals->image.at<cv::Vec3f>(r, c)[0] = n(0);
-            normals->image.at<cv::Vec3f>(r, c)[1] = n(1);
-            normals->image.at<cv::Vec3f>(r, c)[2] = n(2);
+            normals->image.at<cv::Vec3f>(r, c) = n;
+            // normals->image.at<cv::Vec3f>(r, c)[0] = n(0);
+            // normals->image.at<cv::Vec3f>(r, c)[1] = n(1);
+            // normals->image.at<cv::Vec3f>(r, c)[2] = n(2);
         }
     }
 

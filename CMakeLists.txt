@@ -16,7 +16,6 @@ find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 
 ## Eigen3
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -36,7 +35,6 @@ set(dependencies
 
 include_directories(
   include
-  ${EIGEN3_INCLUDE_DIRS}
 )
 
 # Main library
@@ -61,13 +59,8 @@ add_executable(${PROJECT_NAME}_node src/NormalEstimationNode.cpp )
 ament_target_dependencies(${PROJECT_NAME}_node
                                 ${dependencies}
 )
-target_compile_options(${PROJECT_NAME}_node PRIVATE 
-                        -ftree-vectorize 
-                        -fopt-info-loop-optimized=vec_${PROJECT_NAME}_node.txt 
-                        -funsafe-math-optimizations 
-                        -fno-math-errno 
-                        -ffinite-math-only #-ffinite-math-only and -fno-trapping-math.
-   )
+target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
+
 target_link_libraries(${PROJECT_NAME}_node
         ${PROJECT_NAME}
 )

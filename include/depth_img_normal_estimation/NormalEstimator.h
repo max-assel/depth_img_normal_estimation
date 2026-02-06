@@ -50,15 +50,16 @@ class NormalEstimator
 
         void estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals);
 
-        void publishNormals(const cv_bridge::CvImagePtr& normals, const cv_bridge::CvImagePtr& normals_bgr);
+        // , const cv_bridge::CvImagePtr& normals_bgr
+        void publishNormals(const cv_bridge::CvImagePtr& normals);
 
         bool notReceivedDepthImage();
 
         image_transport::Subscriber depth_img_sub;
 
         image_transport::Publisher normals_pub; /**< estimated normals image publisher */
-        image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
-        image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
+        // image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
+        // image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
 
         // std::mutex depth_img_mutex;
         // ros::NodeHandle nodeHandle;
@@ -70,13 +71,23 @@ class NormalEstimator
         cv_bridge::CvImagePtr depth_img_ptr;
         cv_bridge::CvImagePtr filtered_depth_ptr;
         cv_bridge::CvImagePtr normals_ptr;
-        cv_bridge::CvImagePtr normals_bgr_ptr;
+        // cv_bridge::CvImagePtr normals_bgr_ptr;
 
         bool hardware_;
 
-        float scale = 0.001; // 1000;
+        float scale_ = 0.001; // 1000;
+        float invScale_ = 1.0 / scale_;
 
         PinholeCamera camera;
+
+        float dX_dx = 0.0;
+        float dY_dx = 0.0;
+        float dX_dy = 0.0;
+        float dY_dy = 0.0;
+        cv::Vec3f v_x; // (0.0, 0.0, 0.0);
+        cv::Vec3f v_y; // (0.0, 0.0, 0.0);
+        cv::Vec3f n; // (0.0, 0.0, 0.0); 
+        // cv::Vec3f nhat(0.0, 0.0, 0.0);
 
         // std::chrono::steady_clock::time_point initTime;
 
