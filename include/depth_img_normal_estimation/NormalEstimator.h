@@ -67,6 +67,7 @@ class NormalEstimator
 
         cv::Mat depth_img;
         cv::Mat depth_img_padded;
+        cv::Mat depth_img_preprocessed;
 
         cv_bridge::CvImagePtr depth_img_ptr;
         cv_bridge::CvImagePtr filtered_depth_ptr;
@@ -88,6 +89,14 @@ class NormalEstimator
         cv::Vec3f v_y; // (0.0, 0.0, 0.0);
         cv::Vec3f n; // (0.0, 0.0, 0.0); 
         // cv::Vec3f nhat(0.0, 0.0, 0.0);
+
+        int rows_ = 0;
+        int cols_ = 0;
+        float Z = 0.0;
+        float Z_r = 0.0;
+        float Z_c = 0.0;
+        float dZ_dx = 0.0;
+        float dZ_dy = 0.0;
 
         // std::chrono::steady_clock::time_point initTime;
 

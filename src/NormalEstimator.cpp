@@ -102,7 +102,6 @@ void NormalEstimator::runNormalEstimation()
     // int cols = depth_img.cols;
 
     // // Pre-process depth image
-    cv::Mat depth_img_preprocessed;
         
     if (hardware_)
     {
@@ -238,10 +237,9 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
     // Normal estimation code
 
-    int rows = depth_img.rows;
-    int cols = depth_img.cols;
-    float Z = 0.0, Z_r = 0.0, Z_c = 0.0;
-    float dZ_dx = 0.0, dZ_dy = 0.0;
+
+    rows_ = depth_img.rows;
+    cols_ = depth_img.cols;
 
     // int padded_rows = depth_img_padded.rows;
     // int padded_cols = depth_img_padded.cols;
@@ -252,11 +250,11 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
 
     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "  Padding bottom row.");
 
-    for (int c = 0; c < cols; c++)
+    for (int c = 0; c < cols_; c++)
     {
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "      col: " << c);
-        Z = depth_img.at<float>(rows - 2, c) * scale_;
-        Z_r = depth_img.at<float>(rows - 1, c) * scale_;
+        Z = depth_img.at<float>(rows_ - 2, c) * scale_;
+        Z_r = depth_img.at<float>(rows_ - 1, c) * scale_;
 
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 2 << ", " << c << ") is: " << depth_img.at<float>(rows - 2, c));
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows - 1 << ", " << c << ") is: " << depth_img.at<float>(rows - 1, c));
@@ -264,21 +262,21 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
         // Calculate depth gradient
         dZ_dy = (Z_r - Z);
 
-        depth_img_padded.at<float>(rows, c) = (Z_r + dZ_dy) * invScale_;
+        depth_img_padded.at<float>(rows_, c) = (Z_r + dZ_dy) * invScale_;
 
         // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), "        depth at pixel: (" << rows << ", " << c << ") is: " << depth_img_padded.at<float>(rows, c));
 
     }
 
-    for (int r = 0; r < rows; r++)
+    for (int r = 0; r < rows_; r++)
     {
-        Z = depth_img.at<float>(r, cols - 2) * scale_;
-        Z_c = depth_img.at<float>(r, cols - 1) * scale_;
+        Z = depth_img.at<float>(r, cols_ - 2) * scale_;
+        Z_c = depth_img.at<float>(r, cols_ - 1) * scale_;
 
         // Calculate depth gradient
         dZ_dx = (Z_c - Z);
 
-        depth_img_padded.at<float>(r, cols) = (Z_c + dZ_dx) * invScale_;
+        depth_img_padded.at<float>(r, cols_) = (Z_c + dZ_dx) * invScale_;
     }
 
     // paddingEnd = std::chrono::steady_clock::now();
@@ -289,9 +287,9 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
     // depthGradientsBegin = std::chrono::steady_clock::now();
 
     // #pragma omp parallel for collapse(2) // parallelize the loop for better performance
-    for (int r = 0; r < rows; r++)
+    for (int r = 0; r < rows_; r++)
     {
-        for (int c = 0; c < cols; c++)
+        for (int c = 0; c < cols_; c++)
         {
             // Do something
             Z = depth_img_padded.at<float>(r, c) * scale_;
@@ -346,7 +344,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // }
 
             // Normalize normal
-            n = n / cv::norm(n);
+            // n = n / cv::norm(n);
 
             // cv::normalize(n, nhat);
 
@@ -363,7 +361,7 @@ void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvIma
             // }
 
             // Set normal
-            normals->image.at<cv::Vec3f>(r, c) = n;
+            normals->image.at<cv::Vec3f>(r, c) = n / cv::norm(n);
             // normals->image.at<cv::Vec3f>(r, c)[0] = n(0);
             // normals->image.at<cv::Vec3f>(r, c)[1] = n(1);
             // normals->image.at<cv::Vec3f>(r, c)[2] = n(2);
