@@ -23,7 +23,7 @@ def generate_launch_description():
                     'use_sim_time': LaunchConfiguration("use_sim_time")
                 },
                 {
-                    'camera_depth_topic': '/D435/depth/image_raw'
+                    'camera_depth_topic': '/D435/depth/image_rect_raw'
                 },
                 {
                     'camera_normals_topic': '/D435/normals'
