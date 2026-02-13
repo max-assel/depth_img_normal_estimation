@@ -50,15 +50,15 @@ class NormalEstimator
 
         void estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals);
 
-        // , const cv_bridge::CvImagePtr& normals_bgr
-        void publishNormals(const cv_bridge::CvImagePtr& normals);
+        // 
+        void publishNormals(const cv_bridge::CvImagePtr& normals, const cv_bridge::CvImagePtr& normals_bgr);
 
         bool notReceivedDepthImage();
 
         image_transport::Subscriber depth_img_sub;
 
         image_transport::Publisher normals_pub; /**< estimated normals image publisher */
-        // image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
+        image_transport::Publisher normals_bgr_img_pub; /**< estimated normals image publisher */
         // image_transport::Publisher filtered_depth_pub; /**< filtered depth image publisher */
 
         // std::mutex depth_img_mutex;

@@ -17,7 +17,7 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
 
     // Initialize publishers
     normals_pub = it.advertise(camera_normals_topic, 1);
-    // normals_bgr_img_pub = it.advertise(camera_normals_topic + "/colored", 1);
+    normals_bgr_img_pub = it.advertise(camera_normals_topic + "/colored", 1);
     // filtered_depth_pub = it.advertise(camera_depth_topic + "_filtered", 1);
 
     // Load configs
@@ -190,24 +190,24 @@ void NormalEstimator::runNormalEstimation()
     //                                                             normals_ptr->image.at<cv::Vec3f>(r, c)[1], 
     //                                                             normals_ptr->image.at<cv::Vec3f>(r, c)[2]);
 
-    // cv_bridge::CvImagePtr normals_bgr_ptr(new cv_bridge::CvImage);
-    // normals_bgr_ptr->header = depth_img_ptr->header;                                
-    // normals_bgr_ptr->encoding = "rgb8";                                            
-    // normals_bgr_ptr->image = normals_ptr->image.clone();
+    cv_bridge::CvImagePtr normals_bgr_ptr(new cv_bridge::CvImage);
+    normals_bgr_ptr->header = depth_img_ptr->header;                                
+    normals_bgr_ptr->encoding = "rgb8";                                            
+    normals_bgr_ptr->image = normals_ptr->image.clone();
 
-    // // Convert from float to 8UC3
-    // // First, take abs value of normals
-    // normals_bgr_ptr->image = cv::abs(normals_bgr_ptr->image);
+    // Convert from float to 8UC3
+    // First, take abs value of normals
+    normals_bgr_ptr->image = cv::abs(normals_bgr_ptr->image);
 
-    // // Then, convert to 8UC3
-    // normals_bgr_ptr->image.convertTo(normals_bgr_ptr->image, CV_8UC3, 255.0);
+    // Then, convert to 8UC3
+    normals_bgr_ptr->image.convertTo(normals_bgr_ptr->image, CV_8UC3, 255.0);
 
     // ROS_INFO("      middle colored normal: %d %d %d", normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[0], 
     //                                                     normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[1], 
     //                                                     normals_bgr_ptr->image.at<cv::Vec3b>(r, c)[2]);
 
     // Display normals
-    publishNormals(normals_ptr); // , normals_bgr_ptr
+    publishNormals(normals_ptr, normals_bgr_ptr);
 
     // totalEnd = std::chrono::steady_clock::now();
     // totalTimeTaken += std::chrono::duration_cast<std::chrono::microseconds>(totalEnd - totalBegin).count();
@@ -218,11 +218,11 @@ void NormalEstimator::runNormalEstimation()
     return;
 }
 
-// , const cv_bridge::CvImagePtr& normals_bgr
-void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals)
+// 
+void NormalEstimator::publishNormals(const cv_bridge::CvImagePtr& normals, const cv_bridge::CvImagePtr& normals_bgr)
 {
     normals_pub.publish(normals->toImageMsg());
-    // normals_bgr_img_pub.publish(normals_bgr->toImageMsg());
+    normals_bgr_img_pub.publish(normals_bgr->toImageMsg());
 }
 
 void NormalEstimator::estimateNormals(const cv::Mat& depth_img, cv_bridge::CvImagePtr& normals)
