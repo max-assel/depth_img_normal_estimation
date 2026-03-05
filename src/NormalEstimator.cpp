@@ -44,7 +44,7 @@ NormalEstimator::NormalEstimator(const rclcpp::Node::SharedPtr & nodePtr,
 // {
 //     // RCLCPP_INFO_STREAM(nodePtr_->get_logger(), " [NormalEstimator::~NormalEstimator]");
 //     std::ofstream logFile;
-//     logFile.open("/home/masselmeier3/Desktop/Research/quad_pips_experiments/timing/superpixels/normals/timing_log_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(initTime.time_since_epoch()).count()) + ".csv", std::ios::out);
+//     logFile.open("/home/control/Desktop/Research/quad_pips_experiments/timing/superpixels/normals/timing_log_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(initTime.time_since_epoch()).count()) + ".csv", std::ios::out);
 
 //     float averagePreprocessTime = preprocessTimeTaken * 1.0e-3 / static_cast<float>(numberOfPreprocessCalls);
 //     float averagePaddingTime = paddingTimeTaken * 1.0e-3 / static_cast<float>(numberOfPaddingCalls);
