@@ -27,11 +27,9 @@
   <author email="mass@gatech.edu">Max Asselmeier</author>
 
 
-  <!-- <buildtool_depend>catkin</buildtool_depend> -->
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
   <depend>roslib</depend>
-  <!-- <depend>roscpp</depend>  -->
   <depend>rclcpp</depend>
   <depend>cv_bridge</depend> 
   <depend>image_transport</depend>
